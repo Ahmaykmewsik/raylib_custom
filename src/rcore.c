@@ -697,11 +697,13 @@ struct android_app *GetAndroidApp(void)
 
 // Initialize window and OpenGL context
 // NOTE: data parameter could be used to pass any kind of required data to the initialization
-void InitWindow(int width, int height, const char *title)
+void InitWindow(int width, int height, const char *title) 
 {
     TRACELOG(LOG_INFO, "Initializing raylib %s", RAYLIB_VERSION);
 
-    if ((title != NULL) && (title[0] != 0)) CORE.Window[CORE.currentWindow].title = title;
+    if (!title) title = "";
+    CORE.currentWindow = CORE.numWindows;
+    CORE.Window[CORE.currentWindow].title = title;
 
     // Initialize required global values different than 0
     CORE.Input.Keyboard.exitKey = KEY_ESCAPE;
@@ -777,6 +779,7 @@ void InitWindow(int width, int height, const char *title)
     // Initialize graphics device (display device and OpenGL context)
     // NOTE: returns true if window and graphic device has been initialized successfully
     CORE.Window[CORE.currentWindow].ready = InitGraphicsDevice(width, height);
+    CORE.numWindows++;
 
     // If graphic device is no properly initialized, we end program
     if (!CORE.Window[CORE.currentWindow].ready)
@@ -795,12 +798,15 @@ void InitWindow(int width, int height, const char *title)
     CORE.Storage.basePath = GetWorkingDirectory();
 
 #if defined(SUPPORT_DEFAULT_FONT)
-    // Load default font
+    // Load default font (only on the first window load)
     // NOTE: External functions (defined in module: text)
-    LoadFontDefault();
-    Rectangle rec = GetFontDefault().recs[95];
-    // NOTE: We setup a 1px padding on char rectangle to avoid pixel bleeding on MSAA filtering
-    SetShapesTexture(GetFontDefault().texture, (Rectangle){ rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2 });
+    // if (CORE.currentWindow == 0)
+    // {
+        LoadFontDefault();
+        Rectangle rec = GetFontDefault().recs[95];
+        // NOTE: We setup a 1px padding on char rectangle to avoid pixel bleeding on MSAA filtering
+        SetShapesTexture(GetFontDefault().texture, (Rectangle){rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2});
+    // }
 #else
     // Set default texture and rectangle to be used for shapes drawing
     // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
@@ -2001,26 +2007,31 @@ void EndDrawing(void)
 #if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     SwapScreenBuffer();                  // Copy back buffer to front buffer (screen)
 
-    // Frame time control system
-    CORE.Time.current = GetTime();
-    CORE.Time.draw = CORE.Time.current - CORE.Time.previous;
-    CORE.Time.previous = CORE.Time.current;
-
-    CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
-
-    // Wait for some milliseconds...
-    if (CORE.Time.frame < CORE.Time.target)
+    //Only wait once all windows have drawn
+    //Requires that we are drawing in the last window!
+    if (CORE.currentWindow == numContexts - 1)
     {
-        WaitTime((float)(CORE.Time.target - CORE.Time.frame)*1000.0f);
-
+        // Frame time control system
         CORE.Time.current = GetTime();
-        double waitTime = CORE.Time.current - CORE.Time.previous;
+        CORE.Time.draw = CORE.Time.current - CORE.Time.previous;
         CORE.Time.previous = CORE.Time.current;
 
-        CORE.Time.frame += waitTime;    // Total frame time: update + draw + wait
-    }
+        CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
 
-    PollInputEvents();      // Poll user events (before next frame update)
+        // Wait for some milliseconds...
+        if (CORE.Time.frame < CORE.Time.target)
+        {
+            WaitTime((float)(CORE.Time.target - CORE.Time.frame) * 1000.0f);
+
+            CORE.Time.current = GetTime();
+            double waitTime = CORE.Time.current - CORE.Time.previous;
+            CORE.Time.previous = CORE.Time.current;
+
+            CORE.Time.frame += waitTime; // Total frame time: update + draw + wait
+        }
+
+        PollInputEvents(); // Poll user events (before next frame update)
+    }
 #endif
 
 #if defined(SUPPORT_EVENTS_AUTOMATION)
@@ -3921,7 +3932,12 @@ static bool InitGraphicsDevice(int width, int height)
         // HighDPI monitors are properly considered in a following similar function: SetupViewport()
         SetupFramebuffer(CORE.Window[CORE.currentWindow].display.width, CORE.Window[CORE.currentWindow].display.height);
 
-        CORE.Window[CORE.currentWindow].handle = glfwCreateWindow(CORE.Window[CORE.currentWindow].display.width, CORE.Window[CORE.currentWindow].display.height, CORE.Window[CORE.currentWindow].title, glfwGetPrimaryMonitor(), CORE.currentWindow == 0 ? NULL : CORE.Window[0].handle);
+        CORE.Window[CORE.currentWindow].handle = glfwCreateWindow(CORE.Window[CORE.currentWindow].display.width,
+                                                                  CORE.Window[CORE.currentWindow].display.height,
+                                                                  CORE.Window[CORE.currentWindow].title,
+                                                                  glfwGetPrimaryMonitor(),
+                                                                  CORE.currentWindow == 0 ? NULL : CORE.Window[0].handle);
+
         //CORE.Window[CORE.currentWindow].handle = glfwCreateWindow(CORE.Window[CORE.currentWindow].display.width, CORE.Window[CORE.currentWindow].display.height, CORE.Window[CORE.currentWindow].title, glfwGetPrimaryMonitor(), NULL);
 
         // NOTE: Full-screen change, not working properly...
@@ -3930,7 +3946,13 @@ static bool InitGraphicsDevice(int width, int height)
     else
     {
         // No-fullscreen window creation
-        CORE.Window[CORE.currentWindow].handle = glfwCreateWindow(CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height, CORE.Window[CORE.currentWindow].title, NULL, CORE.currentWindow == 0 ? NULL : CORE.Window[0].handle);
+
+        CORE.Window[CORE.currentWindow].handle = glfwCreateWindow(CORE.Window[CORE.currentWindow].screen.width,
+                                                                  CORE.Window[CORE.currentWindow].screen.height,
+                                                                  CORE.Window[CORE.currentWindow].title,
+                                                                  NULL,
+                                                                  CORE.currentWindow == 0 ? NULL : CORE.Window[0].handle);
+
         // CORE.Window[CORE.currentWindow].handle = glfwCreateWindow(CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height, (CORE.Window[CORE.currentWindow].title != 0)? CORE.Window[CORE.currentWindow].title : " ", NULL, NULL);
 
         if (CORE.Window[CORE.currentWindow].handle)
@@ -4433,13 +4455,17 @@ static bool InitGraphicsDevice(int width, int height)
     }
 #endif  // PLATFORM_ANDROID || PLATFORM_RPI || PLATFORM_DRM
 
+    rlSetContext(CORE.currentWindow);
+
     // Load OpenGL extensions
     // NOTE: GL procedures address loader is required to load extensions
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
+
     rlLoadExtensions(glfwGetProcAddress);
 #else
     rlLoadExtensions(eglGetProcAddress);
 #endif
+
 
     // Initialize OpenGL context (states and resources)
     // NOTE: CORE.Window[CORE.currentWindow].currentFbo.width and CORE.Window[CORE.currentWindow].currentFbo.height not used, just stored as globals in rlgl
@@ -5308,10 +5334,12 @@ static void AndroidCommandCallback(struct android_app *app, int32_t cmd)
                 #if defined(SUPPORT_DEFAULT_FONT)
                     // Load default font
                     // NOTE: External function (defined in module: text)
-                    LoadFontDefault();
-                    Rectangle rec = GetFontDefault().recs[95];
-                    // NOTE: We setup a 1px padding on char rectangle to avoid pixel bleeding on MSAA filtering
-                    SetShapesTexture(GetFontDefault().texture, (Rectangle){ rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2 });
+                    if (CORE.currentWindow == 0) {
+                        LoadFontDefault();
+                        Rectangle rec = GetFontDefault().recs[95];
+                        // NOTE: We setup a 1px padding on char rectangle to avoid pixel bleeding on MSAA filtering
+                        SetShapesTexture(GetFontDefault().texture, (Rectangle){rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2});
+                    }
                 #endif
 
                     // TODO: GPU assets reload in case of lost focus (lost context)

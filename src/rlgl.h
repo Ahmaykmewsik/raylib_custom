@@ -1872,6 +1872,15 @@ static void GLAPIENTRY rlDebugMessageCallback(GLenum source, GLenum type, GLuint
 // Initialize rlgl: OpenGL extensions, default buffers/shaders/textures, OpenGL states
 void rlglInit(int width, int height)
 {
+
+    currentContext = numContexts;
+    // // initialize the struct for the first time
+    // if (numContexts == 0) 
+    // {
+    //     memset(RLGL, 0, sizeof(rlglData) * MAX_CONTEXTS);
+    // }
+    numContexts++;
+
     // Enable OpenGL debug context if required
 #if defined(RLGL_ENABLE_OPENGL_DEBUG_CONTEXT) && defined(GRAPHICS_API_OPENGL_43)
     if ((glDebugMessageCallback != NULL) && (glDebugMessageControl != NULL))
@@ -1886,6 +1895,7 @@ void rlglInit(int width, int height)
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     }
 #endif
+
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Init default white texture
