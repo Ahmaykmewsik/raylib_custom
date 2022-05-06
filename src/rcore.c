@@ -388,6 +388,10 @@ typedef struct CoreData {
         char **dropFilesPath;               // Store dropped files paths as strings
         int dropFileCount;                  // Count dropped files strings
 
+        //CUSTOM---
+        unsigned int contextIndex;
+        bool mouseOnThisWindow;
+
     } Window[MAX_CONTEXTS];
     unsigned int currentWindow;
     unsigned int numWindows;
@@ -704,6 +708,7 @@ void InitWindow(int width, int height, const char *title)
     if (!title) title = "";
     CORE.currentWindow = CORE.numWindows;
     CORE.Window[CORE.currentWindow].title = title;
+    CORE.Window[CORE.currentWindow].contextIndex = CORE.currentWindow;
 
     // Initialize required global values different than 0
     CORE.Input.Keyboard.exitKey = KEY_ESCAPE;
@@ -1901,9 +1906,20 @@ void DisableCursor(void)
 }
 
 // Check if cursor is on the current screen.
-bool IsCursorOnScreen(void)
+bool IsCursorOnScreen(int contextIndex)
 {
-    return CORE.Input.Mouse.cursorOnScreen;
+    bool result = false;
+    for (int i = 0;
+         i < MAX_CONTEXTS;
+         i++)
+    {
+        if (CORE.Window[i].contextIndex == contextIndex && CORE.Window[i].mouseOnThisWindow)
+        {
+            result = true;
+            break;
+        }
+    }
+    return result;
 }
 
 // Set background color (framebuffer clear color)
@@ -5231,6 +5247,11 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
     CORE.Input.Mouse.currentPosition.x = (float)x;
     CORE.Input.Mouse.currentPosition.y = (float)y;
     CORE.Input.Touch.position[0] = CORE.Input.Mouse.currentPosition;
+
+    for (int i = 0; i < MAX_CONTEXTS; i++)
+    {
+        CORE.Window[i].mouseOnThisWindow = CORE.Window[i].handle == window;
+    }
 
 #if defined(SUPPORT_GESTURES_SYSTEM) && defined(SUPPORT_MOUSE_GESTURES)         // PLATFORM_DESKTOP
     // Process mouse events as touches to be able to use mouse-gestures
