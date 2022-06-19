@@ -2061,7 +2061,10 @@ void EndDrawing(void)
     }
 #endif
 
-    CORE.Time.frameCounter++;
+    if (CORE.currentWindow == numContexts - 1)
+    {
+        CORE.Time.frameCounter++;
+    }
 }
 
 // Initialize 2D mode with custom camera (2D)

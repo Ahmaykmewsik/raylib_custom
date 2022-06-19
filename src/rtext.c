@@ -1063,7 +1063,8 @@ unsigned int TextLength(const char *text)
 
     if (text != NULL)
     {
-        while (*text++) length++;
+        while (*text++) 
+            length++;
     }
 
     return length;
