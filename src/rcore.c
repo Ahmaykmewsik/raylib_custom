@@ -1777,12 +1777,12 @@ int GetMonitorRefreshRate(int monitor)
 }
 
 // Get window position XY on monitor
-Vector2 GetWindowPosition(void)
+Vector2 GetWindowPosition(unsigned int contextID)
 {
     int x = 0;
     int y = 0;
 #if defined(PLATFORM_DESKTOP)
-    glfwGetWindowPos(CORE.Window[CORE.currentWindow].handle, &x, &y);
+    glfwGetWindowPos(CORE.Window[contextID].handle, &x, &y);
 #endif
     return (Vector2){ (float)x, (float)y };
 }
@@ -1795,7 +1795,7 @@ Vector2 GetWindowScaleDPI(void)
 #if defined(PLATFORM_DESKTOP)
     float xdpi = 1.0;
     float ydpi = 1.0;
-    Vector2 windowPos = GetWindowPosition();
+    Vector2 windowPos = GetWindowPosition(CORE.currentWindow);
 
     int monitorCount = 0;
     GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
@@ -2694,6 +2694,15 @@ void SetConfigFlags(unsigned int flags, unsigned int contextID)
     // Selected flags are set but not evaluated at this point,
     // flag evaluation happens at InitWindow() or SetWindowState()
     CORE.Window[contextID].flags |= flags;
+}
+
+//CUSTOM: Removes bitflags instead of adding them (for rare cases)
+//For before window init only
+void RemoveConfigFlags(unsigned int flags, unsigned int contextID)
+{
+    //TODO: play with this some more
+    // flags = ~flags;
+    // CORE.Window[contextID].flags -= 0x00040000;
 }
 
 // NOTE TRACELOG() function is located in [utils.h]
