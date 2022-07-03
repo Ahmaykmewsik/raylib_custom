@@ -1034,19 +1034,33 @@ bool WindowShouldClose(void)
 #endif
 
 #if defined(PLATFORM_DESKTOP)
+    bool result = false;
     if (CORE.Window[CORE.currentWindow].ready)
     {
         // While window minimized, stop loop execution
+        // TODO(ahmayk): is this what we want? May want to bring up a pause menu instead of pausing execution
         while (IsWindowState(FLAG_WINDOW_MINIMIZED) && !IsWindowState(FLAG_WINDOW_ALWAYS_RUN)) glfwWaitEvents();
 
-        CORE.Window[CORE.currentWindow].shouldClose = glfwWindowShouldClose(CORE.Window[CORE.currentWindow].handle);
+        for (int i = 0;
+             i < MAX_CONTEXTS;
+             i++)
+        {
+            if (CORE.Window[i].handle)
+            {
+                CORE.Window[i].shouldClose = glfwWindowShouldClose(CORE.Window[i].handle);
 
-        // Reset close status for next frame
-        glfwSetWindowShouldClose(CORE.Window[CORE.currentWindow].handle, GLFW_FALSE);
+                // Reset close status for next frame
+                glfwSetWindowShouldClose(CORE.Window[i].handle, GLFW_FALSE);
 
-        return CORE.Window[CORE.currentWindow].shouldClose;
+                if (CORE.Window[i].shouldClose)
+                {
+                    result = true;
+                    break;
+                }
+            }
+        }
     }
-    else return true;
+    return result;
 #endif
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
