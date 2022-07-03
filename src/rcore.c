@@ -1537,10 +1537,10 @@ void SetWindowMinSize(int width, int height)
 }
 
 // Set window dimensions
-void SetWindowSize(int width, int height)
+void SetWindowSize(int width, int height, int contextID)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    glfwSetWindowSize(CORE.Window[CORE.currentWindow].handle, width, height);
+    glfwSetWindowSize(CORE.Window[contextID].handle, width, height);
 #endif
 #if defined(PLATFORM_WEB)
     //emscripten_set_canvas_size(width, height);  // DEPRECATED!
@@ -2689,11 +2689,11 @@ double GetTime(void)
 // NOTE: This function is expected to be called before window creation,
 // because it setups some flags for the window creation process.
 // To configure window states after creation, just use SetWindowState()
-void SetConfigFlags(unsigned int flags)
+void SetConfigFlags(unsigned int flags, unsigned int contextID)
 {
     // Selected flags are set but not evaluated at this point,
     // flag evaluation happens at InitWindow() or SetWindowState()
-    CORE.Window[CORE.currentWindow].flags |= flags;
+    CORE.Window[contextID].flags |= flags;
 }
 
 // NOTE TRACELOG() function is located in [utils.h]
