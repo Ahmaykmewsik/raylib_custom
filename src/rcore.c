@@ -112,6 +112,9 @@
 *
 **********************************************************************************************/
 
+//Force desktop
+#define PLATFORM_DESKTOP 1
+
 #include "raylib.h"                 // Declares module functions
 
 // Check if config flags have been externally provided on compilation line
@@ -191,13 +194,13 @@
 #if defined(PLATFORM_DESKTOP)
     #define GLFW_INCLUDE_NONE       // Disable the standard OpenGL header inclusion on GLFW3
                                     // NOTE: Already provided by rlgl implementation (on glad.h)
-    #include "GLFW/glfw3.h"         // GLFW3 library: Windows, OpenGL context and Input management
+    #include "glfw3.h"         // GLFW3 library: Windows, OpenGL context and Input management
                                     // NOTE: GLFW3 already includes gl.h (OpenGL) headers
 
     // Support retrieving native window handlers
     #if defined(_WIN32)
         #define GLFW_EXPOSE_NATIVE_WIN32
-        #include "GLFW/glfw3native.h"       // WARNING: It requires customization to avoid windows.h inclusion!
+        #include "glfw3native.h"       // WARNING: It requires customization to avoid windows.h inclusion!
 
         #if defined(SUPPORT_WINMM_HIGHRES_TIMER) && !defined(SUPPORT_BUSY_WAIT_LOOP)
             // NOTE: Those functions require linking with winmm library
@@ -604,7 +607,7 @@ extern void UnloadFontDefault(void);        // [Module: text] Unloads default fo
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
 static void InitTimer(void);                            // Initialize timer (hi-resolution if available)
-static bool InitGraphicsDevice(int width, int height);  // Initialize graphics device
+static bool InitGraphicsDevice(int width, int height, bool noClick);  // Initialize graphics device
 static void SetupFramebuffer(int width, int height);    // Setup main framebuffer
 static void SetupViewport(int width, int height);       // Set viewport for a provided width and height
 
@@ -701,7 +704,7 @@ struct android_app *GetAndroidApp(void)
 
 // Initialize window and OpenGL context
 // NOTE: data parameter could be used to pass any kind of required data to the initialization
-void InitWindow(int width, int height, const char *title) 
+void InitWindow(int width, int height, const char *title, bool noClick) 
 {
     TRACELOG(LOG_INFO, "Initializing raylib %s", RAYLIB_VERSION);
 
@@ -783,7 +786,7 @@ void InitWindow(int width, int height, const char *title)
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
     // Initialize graphics device (display device and OpenGL context)
     // NOTE: returns true if window and graphic device has been initialized successfully
-    CORE.Window[CORE.currentWindow].ready = InitGraphicsDevice(width, height);
+    CORE.Window[CORE.currentWindow].ready = InitGraphicsDevice(width, height, noClick);
     CORE.numWindows++;
 
     // If graphic device is no properly initialized, we end program
@@ -3735,7 +3738,7 @@ int GetTouchPointCount(void)
 // NOTE: width and height represent the screen (framebuffer) desired size, not actual display size
 // If width or height are 0, default display size will be used for framebuffer size
 // NOTE: returns false in case graphic device could not be created
-static bool InitGraphicsDevice(int width, int height)
+static bool InitGraphicsDevice(int width, int height, bool noClick)
 {
     CORE.Window[CORE.currentWindow].screen.width = width;            // User desired width
     CORE.Window[CORE.currentWindow].screen.height = height;          // User desired height
@@ -3841,6 +3844,10 @@ static bool InitGraphicsDevice(int width, int height)
     #endif
     }
     else glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
+
+    //HACK: Mouse passthrough
+    if (noClick) glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
+    else (glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE));
 #endif
 
     if (CORE.Window[CORE.currentWindow].flags & FLAG_MSAA_4X_HINT)
@@ -4482,7 +4489,7 @@ static bool InitGraphicsDevice(int width, int height)
 
     rlLoadExtensions(glfwGetProcAddress);
 #else
-    rlLoadExtensions(eglGetProcAddress);
+    // rlLoadExtensions(eglGetProcAddress);
 #endif
 
 

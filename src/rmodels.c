@@ -2142,7 +2142,8 @@ Mesh GenMeshPlane(float width, float length, int resX, int resZ)
 #endif
 
     // Upload vertex data to GPU (static mesh)
-    UploadMesh(&mesh, false);
+    //HACK - nope, it's dynamic! Because yeah!
+    UploadMesh(&mesh, true);
 
     return mesh;
 }

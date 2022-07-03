@@ -504,6 +504,10 @@ Font LoadFontFromMemory(const char *fileType, const unsigned char *fileData, int
             font.glyphPadding = FONT_TTF_DEFAULT_CHARS_PADDING;
 
             Image atlas = GenImageFontAtlas(font.glyphs, &font.recs, font.glyphCount, font.baseSize, font.glyphPadding, 0);
+
+            //HACK - fonts are stored with premultiplied alpha
+            ImageAlphaPremultiply(&atlas);
+
             font.texture = LoadTextureFromImage(atlas);
 
             // Update glyphs[i].image to use alpha, required to be used on ImageDrawText()
