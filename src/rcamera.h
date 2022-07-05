@@ -266,7 +266,7 @@ void SetCameraMode(Camera camera, int mode, int windowID)
 
     CAMERA.playerEyesPosition = camera.position.y;          // Init player eyes position to camera Y position
 
-    CAMERA.previousMousePosition = GetMousePosition();      // Init mouse position
+    CAMERA.previousMousePosition = GetMousePosition(windowID);      // Init mouse position
 
     // Lock cursor for first person and third person cameras
     if ((mode == CAMERA_FIRST_PERSON) || (mode == CAMERA_THIRD_PERSON)) DisableCursor(windowID);
@@ -288,7 +288,8 @@ void UpdateCamera(Camera *camera)
 
     // Mouse movement detection
     Vector2 mousePositionDelta = { 0.0f, 0.0f };
-    Vector2 mousePosition = GetMousePosition();
+    //NOTE: only does fancy stuff with the position from the first window 
+    Vector2 mousePosition = GetMousePosition(0);
     float mouseWheelMove = GetMouseWheelMove();
 
     // Keys input detection

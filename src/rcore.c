@@ -445,12 +445,12 @@ typedef struct CoreData {
         struct {
             Vector2 offset;                 // Mouse offset
             Vector2 scale;                  // Mouse scaling
-            Vector2 currentPosition;        // Mouse position on screen
-            Vector2 previousPosition;       // Previous mouse position
+            Vector2 currentPosition[MAX_CONTEXTS];        // Mouse position on screen
+            Vector2 previousPosition[MAX_CONTEXTS];       // Previous mouse position
 
             int cursor;                     // Tracks current mouse cursor
-            bool cursorHidden;              // Track if cursor is hidden
-            bool cursorOnScreen;            // Tracks if cursor is inside client area
+            bool cursorHidden[MAX_CONTEXTS];              // Track if cursor is hidden
+            bool cursorOnScreen[MAX_CONTEXTS];            // Tracks if cursor is inside client area
 
             char currentButtonState[MAX_MOUSE_BUTTONS];     // Registers current mouse button state
             char previousButtonState[MAX_MOUSE_BUTTONS];    // Registers previous mouse button state
@@ -619,7 +619,7 @@ extern void UnloadFontDefault(void);        // [Module: text] Unloads default fo
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
 static void InitTimer(void);                            // Initialize timer (hi-resolution if available)
-static bool InitGraphicsDevice(int width, int height, bool noClick);  // Initialize graphics device
+static bool InitGraphicsDevice(int width, int height);  // Initialize graphics device
 static void SetupFramebuffer(int width, int height);    // Setup main framebuffer
 static void SetupViewport(int width, int height);       // Set viewport for a provided width and height
 
@@ -716,7 +716,7 @@ struct android_app *GetAndroidApp(void)
 
 // Initialize window and OpenGL context
 // NOTE: data parameter could be used to pass any kind of required data to the initialization
-void InitWindow(int width, int height, const char *title, bool noClick) 
+void InitWindow(int width, int height, const char *title) 
 {
     TRACELOG(LOG_INFO, "Initializing raylib %s", RAYLIB_VERSION);
 
@@ -798,7 +798,7 @@ void InitWindow(int width, int height, const char *title, bool noClick)
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
     // Initialize graphics device (display device and OpenGL context)
     // NOTE: returns true if window and graphic device has been initialized successfully
-    CORE.Window[CORE.currentWindow].ready = InitGraphicsDevice(width, height, noClick);
+    CORE.Window[CORE.currentWindow].ready = InitGraphicsDevice(width, height);
     CORE.numWindows++;
 
     // If graphic device is no properly initialized, we end program
@@ -873,8 +873,8 @@ void InitWindow(int width, int height, const char *title, bool noClick)
     emscripten_set_gamepaddisconnected_callback(NULL, 1, EmscriptenGamepadCallback);
 #endif
 
-    CORE.Input.Mouse.currentPosition.x = (float)CORE.Window[CORE.currentWindow].screen.width/2.0f;
-    CORE.Input.Mouse.currentPosition.y = (float)CORE.Window[CORE.currentWindow].screen.height/2.0f;
+    CORE.Input.Mouse.currentPosition[CORE.currentWindow].x = (float)CORE.Window[CORE.currentWindow].screen.width/2.0f;
+    CORE.Input.Mouse.currentPosition[CORE.currentWindow].y = (float)CORE.Window[CORE.currentWindow].screen.height/2.0f;
 
 #if defined(SUPPORT_EVENTS_AUTOMATION)
     events = (AutomationEvent *)malloc(MAX_CODE_AUTOMATION_EVENTS*sizeof(AutomationEvent));
@@ -1379,6 +1379,13 @@ void SetWindowState(int windowID, unsigned int flags)
         CORE.Window[windowID].flags |= FLAG_WINDOW_ALWAYS_RUN;
     }
 
+    // [CUSTOM] State change: FLAG_WINDOW_MOUSE_PASSTHROUGH 
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_MOUSE_PASSTHROUGH) != (flags & FLAG_WINDOW_MOUSE_PASSTHROUGH)) && ((flags & FLAG_WINDOW_MOUSE_PASSTHROUGH) > 0))
+    {
+        glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_MOUSE_PASSTHROUGH;
+    }
+
     // The following states can not be changed after window creation
 
     // State change: FLAG_WINDOW_TRANSPARENT
@@ -1478,6 +1485,13 @@ void ClearWindowState(int windowID, unsigned int flags)
     if (((CORE.Window[windowID].flags & FLAG_WINDOW_ALWAYS_RUN) > 0) && ((flags & FLAG_WINDOW_ALWAYS_RUN) > 0))
     {
         CORE.Window[windowID].flags &= ~FLAG_WINDOW_ALWAYS_RUN;
+    }
+
+    // [CUSTOM] State change: FLAG_WINDOW_MOUSE_PASSTHROUGH 
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_MOUSE_PASSTHROUGH) > 0) && ((flags & FLAG_WINDOW_MOUSE_PASSTHROUGH) > 0))
+    {
+        glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_MOUSE_PASSTHROUGH;
     }
 
     // The following states can not be changed after window creation
@@ -1915,7 +1929,7 @@ void ShowCursor(int windowID)
     glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 #endif
 
-    CORE.Input.Mouse.cursorHidden = false;
+    CORE.Input.Mouse.cursorHidden[windowID] = false;
 }
 
 // Hides mouse cursor
@@ -1925,7 +1939,7 @@ void HideCursor(int windowID)
     glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 #endif
 
-    CORE.Input.Mouse.cursorHidden = true;
+    CORE.Input.Mouse.cursorHidden[windowID] = true;
 }
 
 // Check if cursor is not visible
@@ -1945,7 +1959,7 @@ void EnableCursor(int windowID)
     emscripten_exit_pointerlock();
 #endif
 
-    CORE.Input.Mouse.cursorHidden = false;
+    CORE.Input.Mouse.cursorHidden[windowID] = false;
 }
 
 // Disables cursor (lock cursor)
@@ -1958,7 +1972,7 @@ void DisableCursor(int windowID)
     emscripten_request_pointerlock("#canvas", 1);
 #endif
 
-    CORE.Input.Mouse.cursorHidden = true;
+    CORE.Input.Mouse.cursorHidden[windowID] = true;
 }
 
 // Check if cursor is on the current screen.
@@ -3629,47 +3643,47 @@ bool IsMouseButtonUp(int button)
 }
 
 // Get mouse position X
-int GetMouseX(void)
+int GetMouseX(int windowID)
 {
 #if defined(PLATFORM_ANDROID)
     return (int)CORE.Input.Touch.position[0].x;
 #else
-    return (int)((CORE.Input.Mouse.currentPosition.x + CORE.Input.Mouse.offset.x)*CORE.Input.Mouse.scale.x);
+    return (int)((CORE.Input.Mouse.currentPosition[windowID].x + CORE.Input.Mouse.offset.x)*CORE.Input.Mouse.scale.x);
 #endif
 }
 
 // Get mouse position Y
-int GetMouseY(void)
+int GetMouseY(int windowID)
 {
 #if defined(PLATFORM_ANDROID)
     return (int)CORE.Input.Touch.position[0].y;
 #else
-    return (int)((CORE.Input.Mouse.currentPosition.y + CORE.Input.Mouse.offset.y)*CORE.Input.Mouse.scale.y);
+    return (int)((CORE.Input.Mouse.currentPosition[windowID].y + CORE.Input.Mouse.offset.y)*CORE.Input.Mouse.scale.y);
 #endif
 }
 
 // Get mouse position XY
-Vector2 GetMousePosition(void)
+Vector2 GetMousePosition(int windowID)
 {
     Vector2 position = { 0 };
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB)
     position = GetTouchPosition(0);
 #else
-    position.x = (CORE.Input.Mouse.currentPosition.x + CORE.Input.Mouse.offset.x)*CORE.Input.Mouse.scale.x;
-    position.y = (CORE.Input.Mouse.currentPosition.y + CORE.Input.Mouse.offset.y)*CORE.Input.Mouse.scale.y;
+    position.x = (CORE.Input.Mouse.currentPosition[windowID].x + CORE.Input.Mouse.offset.x)*CORE.Input.Mouse.scale.x;
+    position.y = (CORE.Input.Mouse.currentPosition[windowID].y + CORE.Input.Mouse.offset.y)*CORE.Input.Mouse.scale.y;
 #endif
 
     return position;
 }
 
 // Get mouse delta between frames
-Vector2 GetMouseDelta(void)
+Vector2 GetMouseDelta(int windowID)
 {
     Vector2 delta = {0};
 
-    delta.x = CORE.Input.Mouse.currentPosition.x - CORE.Input.Mouse.previousPosition.x;
-    delta.y = CORE.Input.Mouse.currentPosition.y - CORE.Input.Mouse.previousPosition.y;
+    delta.x = CORE.Input.Mouse.currentPosition[windowID].x - CORE.Input.Mouse.previousPosition[windowID].x;
+    delta.y = CORE.Input.Mouse.currentPosition[windowID].y - CORE.Input.Mouse.previousPosition[windowID].y;
 
     return delta;
 }
@@ -3677,10 +3691,10 @@ Vector2 GetMouseDelta(void)
 // Set mouse position XY
 void SetMousePosition(int windowID, int x, int y)
 {
-    CORE.Input.Mouse.currentPosition = (Vector2){ (float)x, (float)y };
+    CORE.Input.Mouse.currentPosition[windowID] = (Vector2){ (float)x, (float)y };
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
     // NOTE: emscripten not implemented
-    glfwSetCursorPos(CORE.Window[windowID].handle, CORE.Input.Mouse.currentPosition.x, CORE.Input.Mouse.currentPosition.y);
+    glfwSetCursorPos(CORE.Window[windowID].handle, CORE.Input.Mouse.currentPosition[windowID].x, CORE.Input.Mouse.currentPosition[windowID].y);
 #endif
 }
 
@@ -3732,7 +3746,7 @@ int GetTouchX(void)
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB)
     return (int)CORE.Input.Touch.position[0].x;
 #else   // PLATFORM_DESKTOP, PLATFORM_RPI, PLATFORM_DRM
-    return GetMouseX();
+    return GetMouseX(0);
 #endif
 }
 
@@ -3742,7 +3756,7 @@ int GetTouchY(void)
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB)
     return (int)CORE.Input.Touch.position[0].y;
 #else   // PLATFORM_DESKTOP, PLATFORM_RPI, PLATFORM_DRM
-    return GetMouseY();
+    return GetMouseY(0);
 #endif
 }
 
@@ -3756,7 +3770,7 @@ Vector2 GetTouchPosition(int index)
     // TODO: GLFW does not support multi-touch input just yet
     // https://www.codeproject.com/Articles/668404/Programming-for-Multi-Touch
     // https://docs.microsoft.com/en-us/windows/win32/wintouch/getting-started-with-multi-touch-messages
-    if (index == 0) position = GetMousePosition();
+    if (index == 0) position = GetMousePosition(0);
 #endif
 #if defined(PLATFORM_ANDROID)
     if (index < MAX_TOUCH_POINTS) position = CORE.Input.Touch.position[index];
@@ -3805,7 +3819,7 @@ int GetTouchPointCount(void)
 // NOTE: width and height represent the screen (framebuffer) desired size, not actual display size
 // If width or height are 0, default display size will be used for framebuffer size
 // NOTE: returns false in case graphic device could not be created
-static bool InitGraphicsDevice(int width, int height, bool noClick)
+static bool InitGraphicsDevice(int width, int height)
 {
     CORE.Window[CORE.currentWindow].screen.width = width;            // User desired width
     CORE.Window[CORE.currentWindow].screen.height = height;          // User desired height
@@ -3900,6 +3914,9 @@ static bool InitGraphicsDevice(int width, int height, bool noClick)
     if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_TRANSPARENT) > 0) glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);     // Transparent framebuffer
     else glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);  // Opaque framebuffer
 
+    if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MOUSE_PASSTHROUGH) > 0) glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);     // Mouse passthrough 
+    else glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);  // Opaque framebuffer
+
     if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIGHDPI) > 0)
     {
         // Resize window content area based on the monitor content scale.
@@ -3912,9 +3929,6 @@ static bool InitGraphicsDevice(int width, int height, bool noClick)
     }
     else glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
 
-    //HACK: Mouse passthrough
-    if (noClick) glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
-    else (glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE));
 #endif
 
     if (CORE.Window[CORE.currentWindow].flags & FLAG_MSAA_4X_HINT)
@@ -4877,7 +4891,7 @@ void PollInputEvents(void)
     CORE.Input.Mouse.currentWheelMove = 0.0f;
 
     // Register previous mouse position
-    CORE.Input.Mouse.previousPosition = CORE.Input.Mouse.currentPosition;
+    for (int i = 0; i < MAX_CONTEXTS; i++) CORE.Input.Mouse.previousPosition[i] = CORE.Input.Mouse.currentPosition[i];
 #endif
 
     // Register previous touch states
@@ -5340,7 +5354,7 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
     gestureEvent.pointCount = 1;
 
     // Register touch points position, only one point registered
-    gestureEvent.position[0] = GetMousePosition();
+    gestureEvent.position[0] = GetMousePosition(windowID);
 
     // Normalize gestureEvent.position[0] for CORE.Window[CORE.currentWindow].screen.width and CORE.Window[windowID].screen.height
     gestureEvent.position[0].x /= (float)GetScreenWidth(windowID);
@@ -5356,9 +5370,9 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 {
     int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
 
-    CORE.Input.Mouse.currentPosition.x = (float)x;
-    CORE.Input.Mouse.currentPosition.y = (float)y;
-    CORE.Input.Touch.position[0] = CORE.Input.Mouse.currentPosition;
+    CORE.Input.Mouse.currentPosition[windowID].x = (float)x;
+    CORE.Input.Mouse.currentPosition[windowID].y = (float)y;
+    CORE.Input.Touch.position[0] = CORE.Input.Mouse.currentPosition[windowID];
 
     for (int i = 0; i < CORE.numWindows; i++)
     {
@@ -5399,8 +5413,9 @@ static void MouseScrollCallback(GLFWwindow *window, double xoffset, double yoffs
 // GLFW3 CursorEnter Callback, when cursor enters the window
 static void CursorEnterCallback(GLFWwindow *window, int enter)
 {
-    if (enter == true) CORE.Input.Mouse.cursorOnScreen = true;
-    else CORE.Input.Mouse.cursorOnScreen = false;
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+    if (enter == true) CORE.Input.Mouse.cursorOnScreen[windowID] = true;
+    else CORE.Input.Mouse.cursorOnScreen[windowID] = false;
 }
 
 // GLFW3 Window Drop Callback, runs when drop files into window
