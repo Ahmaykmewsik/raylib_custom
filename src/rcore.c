@@ -632,6 +632,7 @@ static void WindowMaximizeCallback(GLFWwindow* window, int maximized);          
 #endif
 static void WindowIconifyCallback(GLFWwindow *window, int iconified);                      // GLFW3 WindowIconify Callback, runs when window is minimized/restored
 static void WindowFocusCallback(GLFWwindow *window, int focused);                          // GLFW3 WindowFocus Callback, runs when window get/lose focus
+static void WindowPositionCallback(GLFWwindow *window, int xPos, int yPos);                // [CUSTOM] GLFW3 WindowPos Callback, runs when window is moved 
 static void WindowDropCallback(GLFWwindow *window, int count, const char **paths);         // GLFW3 Window Drop Callback, runs when drop files into window
 // Input callbacks events
 static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);  // GLFW3 Keyboard Callback, runs on key pressed
@@ -4093,6 +4094,7 @@ static bool InitGraphicsDevice(int width, int height)
 #endif
     glfwSetWindowIconifyCallback(CORE.Window[CORE.currentWindow].handle, WindowIconifyCallback);
     glfwSetWindowFocusCallback(CORE.Window[CORE.currentWindow].handle, WindowFocusCallback);
+    glfwSetWindowPosCallback(CORE.Window[CORE.currentWindow].handle, WindowPositionCallback);
     glfwSetDropCallback(CORE.Window[CORE.currentWindow].handle, WindowDropCallback);
     // Set input callback events
     glfwSetKeyCallback(CORE.Window[CORE.currentWindow].handle, KeyCallback);
@@ -5220,6 +5222,14 @@ static void WindowFocusCallback(GLFWwindow *window, int focused)
 
     if (focused) CORE.Window[windowID].flags &= ~FLAG_WINDOW_UNFOCUSED;   // The window was focused
     else CORE.Window[windowID].flags |= FLAG_WINDOW_UNFOCUSED;            // The window lost focus
+}
+
+// GLFW3 WindowFocus Callback, runs when window get/lose focus
+static void WindowPositionCallback(GLFWwindow *window, int xPos, int yPos)
+{
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+    CORE.Window[windowID].position.x = xPos;
+    CORE.Window[windowID].position.y = yPos;
 }
 
 // GLFW3 Keyboard Callback, runs on key pressed
