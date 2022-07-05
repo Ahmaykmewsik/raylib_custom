@@ -248,7 +248,8 @@ static Vector2 GetMousePosition() { return (Vector2){ 0.0f, 0.0f }; }
 //----------------------------------------------------------------------------------
 
 // Select camera mode (multiple camera modes available)
-void SetCameraMode(Camera camera, int mode)
+//NOTE(ahmayk): windowID might want to be inside of camera
+void SetCameraMode(Camera camera, int mode, int windowID)
 {
     Vector3 v1 = camera.position;
     Vector3 v2 = camera.target;
@@ -268,8 +269,8 @@ void SetCameraMode(Camera camera, int mode)
     CAMERA.previousMousePosition = GetMousePosition();      // Init mouse position
 
     // Lock cursor for first person and third person cameras
-    if ((mode == CAMERA_FIRST_PERSON) || (mode == CAMERA_THIRD_PERSON)) DisableCursor();
-    else EnableCursor();
+    if ((mode == CAMERA_FIRST_PERSON) || (mode == CAMERA_THIRD_PERSON)) DisableCursor(windowID);
+    else EnableCursor(windowID);
 
     CAMERA.mode = mode;
 }

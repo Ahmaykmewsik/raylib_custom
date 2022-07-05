@@ -327,6 +327,13 @@
 #define FLAG_TOGGLE(n, f) ((n) ^= (f))
 #define FLAG_CHECK(n, f) ((n) & (f))
 
+// Custom
+#define Assert(expression) \
+    if (!!expression)      \
+    {                      \
+        *(int *)0 = 0;     \
+    }
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
@@ -591,9 +598,14 @@ static unsigned int eventCount = 0;     // Events count
 static bool eventsPlaying = false;      // Play events
 static bool eventsRecording = false;    // Record events
 
+
 //static short eventsEnabled = 0b0000001111111111;    // Events enabled for checking
 #endif
 //-----------------------------------------------------------------------------------
+
+//Custom globals
+static bool isDrawingDirectlyIntoWindow;                  // bool so that we can assert if we call our drawing code incorrectly
+static bool isDrawingIntoTexture;                         // bool so that we can assert if we call our drawing code incorrectly
 
 //----------------------------------------------------------------------------------
 // Other Modules Functions Declaration (required by core)
@@ -614,7 +626,7 @@ static void SetupViewport(int width, int height);       // Set viewport for a pr
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
 static void ErrorCallback(int error, const char *description);                             // GLFW3 Error Callback, runs on GLFW3 error
 // Window callbacks events
-static void WindowSizeCallback(GLFWwindow *window, int width, int height);                 // GLFW3 WindowSize Callback, runs when window is resized
+static void WindowSizeCallback(GLFWwindow *window, int width, int height);   // GLFW3 WindowSize Callback, runs when window is resized
 #if !defined(PLATFORM_WEB)
 static void WindowMaximizeCallback(GLFWwindow* window, int maximized);                     // GLFW3 Window Maximize Callback, runs when window is maximized
 #endif
@@ -872,8 +884,11 @@ void InitWindow(int width, int height, const char *title, bool noClick)
 #endif        // PLATFORM_DESKTOP || PLATFORM_WEB || PLATFORM_RPI || PLATFORM_DRM
 }
 
-// Close window and unload OpenGL context
-void CloseWindow(void)
+// Close all windows and unload OpenGL context
+// Note(Ahmayk): This is only tweaked to work on desktop 
+// If you want to close a single window, tough luck. I couldn't get it to work.
+// Instead I'll be just hiding and showing windows.
+void CloseGame()
 {
 #if defined(SUPPORT_GIF_RECORDING)
     if (gifRecording)
@@ -891,7 +906,11 @@ void CloseWindow(void)
     rlglClose();                // De-init rlgl
 
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    glfwDestroyWindow(CORE.Window[CORE.currentWindow].handle);
+    for (int i = 0; i < CORE.numWindows; i++)
+    {
+        if (CORE.Window[i].ready)
+            glfwDestroyWindow(CORE.Window[i].handle);
+    }
     glfwTerminate();
 #endif
 
@@ -901,98 +920,98 @@ void CloseWindow(void)
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_RPI)
     // Close surface, context and display
-    if (CORE.Window[CORE.currentWindow].device != EGL_NO_DISPLAY)
+    if (CORE.Window[windowID].device != EGL_NO_DISPLAY)
     {
-        eglMakeCurrent(CORE.Window[CORE.currentWindow].device, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglMakeCurrent(CORE.Window[windowID].device, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
-        if (CORE.Window[CORE.currentWindow].surface != EGL_NO_SURFACE)
+        if (CORE.Window[windowID].surface != EGL_NO_SURFACE)
         {
-            eglDestroySurface(CORE.Window[CORE.currentWindow].device, CORE.Window[CORE.currentWindow].surface);
-            CORE.Window[CORE.currentWindow].surface = EGL_NO_SURFACE;
+            eglDestroySurface(CORE.Window[windowID].device, CORE.Window[windowID].surface);
+            CORE.Window[windowID].surface = EGL_NO_SURFACE;
         }
 
-        if (CORE.Window[CORE.currentWindow].context != EGL_NO_CONTEXT)
+        if (CORE.Window[windowID].context != EGL_NO_CONTEXT)
         {
-            eglDestroyContext(CORE.Window[CORE.currentWindow].device, CORE.Window[CORE.currentWindow].context);
-            CORE.Window[CORE.currentWindow].context = EGL_NO_CONTEXT;
+            eglDestroyContext(CORE.Window[windowID].device, CORE.Window[windowID].context);
+            CORE.Window[windowID].context = EGL_NO_CONTEXT;
         }
 
-        eglTerminate(CORE.Window[CORE.currentWindow].device);
-        CORE.Window[CORE.currentWindow].device = EGL_NO_DISPLAY;
+        eglTerminate(CORE.Window[windowID].device);
+        CORE.Window[windowID].device = EGL_NO_DISPLAY;
     }
 #endif
 
 #if defined(PLATFORM_DRM)
-    if (CORE.Window[CORE.currentWindow].prevFB)
+    if (CORE.Window[windowID].prevFB)
     {
-        drmModeRmFB(CORE.Window[CORE.currentWindow].fd, CORE.Window[CORE.currentWindow].prevFB);
-        CORE.Window[CORE.currentWindow].prevFB = 0;
+        drmModeRmFB(CORE.Window[windowID].fd, CORE.Window[windowID].prevFB);
+        CORE.Window[windowID].prevFB = 0;
     }
 
-    if (CORE.Window[CORE.currentWindow].prevBO)
+    if (CORE.Window[windowID].prevBO)
     {
-        gbm_surface_release_buffer(CORE.Window[CORE.currentWindow].gbmSurface, CORE.Window[CORE.currentWindow].prevBO);
-        CORE.Window[CORE.currentWindow].prevBO = NULL;
+        gbm_surface_release_buffer(CORE.Window[windowID].gbmSurface, CORE.Window[windowID].prevBO);
+        CORE.Window[windowID].prevBO = NULL;
     }
 
-    if (CORE.Window[CORE.currentWindow].gbmSurface)
+    if (CORE.Window[windowID].gbmSurface)
     {
-        gbm_surface_destroy(CORE.Window[CORE.currentWindow].gbmSurface);
-        CORE.Window[CORE.currentWindow].gbmSurface = NULL;
+        gbm_surface_destroy(CORE.Window[windowID].gbmSurface);
+        CORE.Window[windowID].gbmSurface = NULL;
     }
 
-    if (CORE.Window[CORE.currentWindow].gbmDevice)
+    if (CORE.Window[windowID].gbmDevice)
     {
-        gbm_device_destroy(CORE.Window[CORE.currentWindow].gbmDevice);
-        CORE.Window[CORE.currentWindow].gbmDevice = NULL;
+        gbm_device_destroy(CORE.Window[windowID].gbmDevice);
+        CORE.Window[windowID].gbmDevice = NULL;
     }
 
-    if (CORE.Window[CORE.currentWindow].crtc)
+    if (CORE.Window[windowID].crtc)
     {
-        if (CORE.Window[CORE.currentWindow].connector)
+        if (CORE.Window[windowID].connector)
         {
-            drmModeSetCrtc(CORE.Window[CORE.currentWindow].fd, CORE.Window[CORE.currentWindow].crtc->crtc_id, CORE.Window[CORE.currentWindow].crtc->buffer_id,
-                CORE.Window[CORE.currentWindow].crtc->x, CORE.Window[CORE.currentWindow].crtc->y, &CORE.Window[CORE.currentWindow].connector->connector_id, 1, &CORE.Window[CORE.currentWindow].crtc->mode);
-            drmModeFreeConnector(CORE.Window[CORE.currentWindow].connector);
-            CORE.Window[CORE.currentWindow].connector = NULL;
+            drmModeSetCrtc(CORE.Window[windowID].fd, CORE.Window[windowID].crtc->crtc_id, CORE.Window[windowID].crtc->buffer_id,
+                CORE.Window[windowID].crtc->x, CORE.Window[windowID].crtc->y, &CORE.Window[windowID].connector->connector_id, 1, &CORE.Window[windowID].crtc->mode);
+            drmModeFreeConnector(CORE.Window[windowID].connector);
+            CORE.Window[windowID].connector = NULL;
         }
 
-        drmModeFreeCrtc(CORE.Window[CORE.currentWindow].crtc);
-        CORE.Window[CORE.currentWindow].crtc = NULL;
+        drmModeFreeCrtc(CORE.Window[windowID].crtc);
+        CORE.Window[windowID].crtc = NULL;
     }
 
-    if (CORE.Window[CORE.currentWindow].fd != -1)
+    if (CORE.Window[windowID].fd != -1)
     {
-        close(CORE.Window[CORE.currentWindow].fd);
-        CORE.Window[CORE.currentWindow].fd = -1;
+        close(CORE.Window[windowID].fd);
+        CORE.Window[windowID].fd = -1;
     }
 
     // Close surface, context and display
-    if (CORE.Window[CORE.currentWindow].device != EGL_NO_DISPLAY)
+    if (CORE.Window[windowID].device != EGL_NO_DISPLAY)
     {
-        if (CORE.Window[CORE.currentWindow].surface != EGL_NO_SURFACE)
+        if (CORE.Window[windowID].surface != EGL_NO_SURFACE)
         {
-            eglDestroySurface(CORE.Window[CORE.currentWindow].device, CORE.Window[CORE.currentWindow].surface);
-            CORE.Window[CORE.currentWindow].surface = EGL_NO_SURFACE;
+            eglDestroySurface(CORE.Window[windowID].device, CORE.Window[windowID].surface);
+            CORE.Window[windowID].surface = EGL_NO_SURFACE;
         }
 
-        if (CORE.Window[CORE.currentWindow].context != EGL_NO_CONTEXT)
+        if (CORE.Window[windowID].context != EGL_NO_CONTEXT)
         {
-            eglDestroyContext(CORE.Window[CORE.currentWindow].device, CORE.Window[CORE.currentWindow].context);
-            CORE.Window[CORE.currentWindow].context = EGL_NO_CONTEXT;
+            eglDestroyContext(CORE.Window[windowID].device, CORE.Window[windowID].context);
+            CORE.Window[windowID].context = EGL_NO_CONTEXT;
         }
 
-        eglTerminate(CORE.Window[CORE.currentWindow].device);
-        CORE.Window[CORE.currentWindow].device = EGL_NO_DISPLAY;
+        eglTerminate(CORE.Window[windowID].device);
+        CORE.Window[windowID].device = EGL_NO_DISPLAY;
     }
 #endif
 
 #if defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
     // Wait for mouse and gamepad threads to finish before closing
     // NOTE: Those threads should already have finished at this point
-    // because they are controlled by CORE.Window[CORE.currentWindow].shouldClose variable
+    // because they are controlled by CORE.Window[windowID].shouldClose variable
 
-    CORE.Window[CORE.currentWindow].shouldClose = true;   // Added to force threads to exit when the close window is called
+    CORE.Window[windowID].shouldClose = true;   // Added to force threads to exit when the close window is called
 
     // Close the evdev keyboard
     if (CORE.Input.Keyboard.fd != -1)
@@ -1015,13 +1034,15 @@ void CloseWindow(void)
 #if defined(SUPPORT_EVENTS_AUTOMATION)
     free(events);
 #endif
-
-    CORE.Window[CORE.currentWindow].ready = false;
-    TRACELOG(LOG_INFO, "Window closed successfully");
+    CORE.Window[0].ready = false;
+    TRACELOG(LOG_INFO, "Game closed successfully. Goodbye!");
 }
 
 // Check if KEY_ESCAPE pressed or Close icon pressed
-bool WindowShouldClose(void)
+// Original name: WindowShouldClose() 
+// TODO(Ahmayk): Does closing one window always close down the whole game?
+// (probably, but we shouldn't do it immedately like here, and instead have that be in game code)
+bool GameShouldClose(void)
 {
 #if defined(PLATFORM_WEB)
     // Emterpreter-Async required to run sync code
@@ -1035,16 +1056,16 @@ bool WindowShouldClose(void)
 
 #if defined(PLATFORM_DESKTOP)
     bool result = false;
-    if (CORE.Window[CORE.currentWindow].ready)
+    for (int i = 0;
+         i < CORE.numWindows;
+         i++)
     {
-        // While window minimized, stop loop execution
-        // TODO(ahmayk): is this what we want? May want to bring up a pause menu instead of pausing execution
-        while (IsWindowState(FLAG_WINDOW_MINIMIZED) && !IsWindowState(FLAG_WINDOW_ALWAYS_RUN)) glfwWaitEvents();
-
-        for (int i = 0;
-             i < MAX_CONTEXTS;
-             i++)
+        if (CORE.Window[i].ready)
         {
+            // While window minimized, stop loop execution
+            // TODO(ahmayk): We will probably want to handle pausing in the game code, not here
+            // while (IsWindowState(FLAG_WINDOW_MINIMIZED) && !IsWindowState(FLAG_WINDOW_ALWAYS_RUN)) glfwWaitEvents();
+
             if (CORE.Window[i].handle)
             {
                 CORE.Window[i].shouldClose = glfwWindowShouldClose(CORE.Window[i].handle);
@@ -1070,86 +1091,88 @@ bool WindowShouldClose(void)
 }
 
 // Check if window has been initialized successfully
-bool IsWindowReady(void)
+bool IsWindowReady(int windowID)
 {
-    return CORE.Window[CORE.currentWindow].ready;
+    return CORE.Window[windowID].ready;
 }
 
 // Check if window is currently fullscreen
-bool IsWindowFullscreen(void)
+bool IsWindowFullscreen(int windowID)
 {
-    return CORE.Window[CORE.currentWindow].fullscreen;
+    return CORE.Window[windowID].fullscreen;
 }
 
 // Check if window is currently hidden
-bool IsWindowHidden(void)
+bool IsWindowHidden(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    return ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIDDEN) > 0);
+    return ((CORE.Window[windowID].flags & FLAG_WINDOW_HIDDEN) > 0);
 #endif
     return false;
 }
 
 // Check if window has been minimized
-bool IsWindowMinimized(void)
+bool IsWindowMinimized(int windowID)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    return ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MINIMIZED) > 0);
+    return ((CORE.Window[windowID].flags & FLAG_WINDOW_MINIMIZED) > 0);
 #else
     return false;
 #endif
 }
 
 // Check if window has been maximized (only PLATFORM_DESKTOP)
-bool IsWindowMaximized(void)
+bool IsWindowMaximized(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    return ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MAXIMIZED) > 0);
+    return ((CORE.Window[windowID].flags & FLAG_WINDOW_MAXIMIZED) > 0);
 #else
     return false;
 #endif
 }
 
 // Check if window has the focus
-bool IsWindowFocused(void)
+bool IsWindowFocused(int windowID)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    return ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_UNFOCUSED) == 0);
+    return ((CORE.Window[windowID].flags & FLAG_WINDOW_UNFOCUSED) == 0);
 #else
     return true;
 #endif
 }
 
 // Check if window has been resizedLastFrame
-bool IsWindowResized(void)
+bool IsWindowResized(int windowID)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    return CORE.Window[CORE.currentWindow].resizedLastFrame;
+    return CORE.Window[windowID].resizedLastFrame;
 #else
     return false;
 #endif
 }
 
 // Check if one specific window flag is enabled
-bool IsWindowState(unsigned int flag)
+bool IsWindowState(int windowID, unsigned int flag)
 {
-    return ((CORE.Window[CORE.currentWindow].flags & flag) > 0);
+    return ((CORE.Window[windowID].flags & flag) > 0);
 }
 
 // Toggle fullscreen mode (only PLATFORM_DESKTOP)
+// Makes the first window fullscreen
+// TODO: Other windows should be closed, yeah?
 void ToggleFullscreen(void)
 {
 #if defined(PLATFORM_DESKTOP)
     // NOTE: glfwSetWindowMonitor() doesn't work properly (bugs)
-    if (!CORE.Window[CORE.currentWindow].fullscreen)
+    if (!CORE.Window[0].fullscreen)
     {
         // Store previous window position (in case we exit fullscreen)
-        glfwGetWindowPos(CORE.Window[CORE.currentWindow].handle, &CORE.Window[CORE.currentWindow].position.x, &CORE.Window[CORE.currentWindow].position.y);
+        glfwGetWindowPos(CORE.Window[0].handle, &CORE.Window[0].position.x, &CORE.Window[0].position.y);
 
         int monitorCount = 0;
         GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
 
-        int monitorIndex = GetCurrentMonitor();
+        int monitorIndex = GetCurrentMonitor(0);
 
         // Use current monitor, so we correctly get the display the window is on
         GLFWmonitor* monitor = monitorIndex < monitorCount ?  monitors[monitorIndex] : NULL;
@@ -1158,29 +1181,29 @@ void ToggleFullscreen(void)
         {
             TRACELOG(LOG_WARNING, "GLFW: Failed to get monitor");
 
-            CORE.Window[CORE.currentWindow].fullscreen = false;          // Toggle fullscreen flag
-            CORE.Window[CORE.currentWindow].flags &= ~FLAG_FULLSCREEN_MODE;
+            CORE.Window[0].fullscreen = false;          // Toggle fullscreen flag
+            CORE.Window[0].flags &= ~FLAG_FULLSCREEN_MODE;
 
-            glfwSetWindowMonitor(CORE.Window[CORE.currentWindow].handle, NULL, 0, 0, CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height, GLFW_DONT_CARE);
+            glfwSetWindowMonitor(CORE.Window[0].handle, NULL, 0, 0, CORE.Window[0].screen.width, CORE.Window[0].screen.height, GLFW_DONT_CARE);
             return;
         }
 
-        CORE.Window[CORE.currentWindow].fullscreen = true;          // Toggle fullscreen flag
-        CORE.Window[CORE.currentWindow].flags |= FLAG_FULLSCREEN_MODE;
+        CORE.Window[0].fullscreen = true;          // Toggle fullscreen flag
+        CORE.Window[0].flags |= FLAG_FULLSCREEN_MODE;
 
-        glfwSetWindowMonitor(CORE.Window[CORE.currentWindow].handle, monitor, 0, 0, CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height, GLFW_DONT_CARE);
+        glfwSetWindowMonitor(CORE.Window[0].handle, monitor, 0, 0, CORE.Window[0].screen.width, CORE.Window[0].screen.height, GLFW_DONT_CARE);
     }
     else
     {
-        CORE.Window[CORE.currentWindow].fullscreen = false;          // Toggle fullscreen flag
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_FULLSCREEN_MODE;
+        CORE.Window[0].fullscreen = false;          // Toggle fullscreen flag
+        CORE.Window[0].flags &= ~FLAG_FULLSCREEN_MODE;
 
-        glfwSetWindowMonitor(CORE.Window[CORE.currentWindow].handle, NULL, CORE.Window[CORE.currentWindow].position.x, CORE.Window[CORE.currentWindow].position.y, CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height, GLFW_DONT_CARE);
+        glfwSetWindowMonitor(CORE.Window[0].handle, NULL, CORE.Window[0].position.x, CORE.Window[0].position.y, CORE.Window[0].screen.width, CORE.Window[0].screen.height, GLFW_DONT_CARE);
     }
 
     // Try to enable GPU V-Sync, so frames are limited to screen refresh rate (60Hz -> 60 FPS)
     // NOTE: V-Sync can be enabled by graphic driver configuration
-    if (CORE.Window[CORE.currentWindow].flags & FLAG_VSYNC_HINT) glfwSwapInterval(1);
+    if (CORE.Window[0].flags & FLAG_VSYNC_HINT) glfwSwapInterval(1);
 #endif
 #if defined(PLATFORM_WEB)
     EM_ASM
@@ -1194,7 +1217,7 @@ void ToggleFullscreen(void)
     );
 
 /*
-    if (!CORE.Window[CORE.currentWindow].fullscreen)
+    if (!CORE.Window[0].fullscreen)
     {
         // Option 1: Request fullscreen for the canvas element
         // This option does not seem to work at all
@@ -1238,8 +1261,8 @@ void ToggleFullscreen(void)
     }
 */
 
-    CORE.Window[CORE.currentWindow].fullscreen = !CORE.Window[CORE.currentWindow].fullscreen;          // Toggle fullscreen flag
-    CORE.Window[CORE.currentWindow].flags ^= FLAG_FULLSCREEN_MODE;
+    CORE.Window[0].fullscreen = !CORE.Window[0].fullscreen;          // Toggle fullscreen flag
+    CORE.Window[0].flags ^= FLAG_FULLSCREEN_MODE;
 #endif
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
     TRACELOG(LOG_WARNING, "SYSTEM: Failed to toggle to windowed mode");
@@ -1247,137 +1270,137 @@ void ToggleFullscreen(void)
 }
 
 // Set window state: maximized, if resizable (only PLATFORM_DESKTOP)
-void MaximizeWindow(void)
+void MaximizeWindow(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    if (glfwGetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_RESIZABLE) == GLFW_TRUE)
+    if (glfwGetWindowAttrib(CORE.Window[windowID].handle, GLFW_RESIZABLE) == GLFW_TRUE)
     {
-        glfwMaximizeWindow(CORE.Window[CORE.currentWindow].handle);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_MAXIMIZED;
+        glfwMaximizeWindow(CORE.Window[windowID].handle);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_MAXIMIZED;
     }
 #endif
 }
 
 // Set window state: minimized (only PLATFORM_DESKTOP)
-void MinimizeWindow(void)
+void MinimizeWindow(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
     // NOTE: Following function launches callback that sets appropiate flag!
-    glfwIconifyWindow(CORE.Window[CORE.currentWindow].handle);
+    glfwIconifyWindow(CORE.Window[windowID].handle);
 #endif
 }
 
 // Set window state: not minimized/maximized (only PLATFORM_DESKTOP)
-void RestoreWindow(void)
+void RestoreWindow(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    if (glfwGetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_RESIZABLE) == GLFW_TRUE)
+    if (glfwGetWindowAttrib(CORE.Window[windowID].handle, GLFW_RESIZABLE) == GLFW_TRUE)
     {
         // Restores the specified window if it was previously iconified (minimized) or maximized
-        glfwRestoreWindow(CORE.Window[CORE.currentWindow].handle);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_MINIMIZED;
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_MAXIMIZED;
+        glfwRestoreWindow(CORE.Window[windowID].handle);
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_MINIMIZED;
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_MAXIMIZED;
     }
 #endif
 }
 
 // Set window configuration state using flags
-void SetWindowState(unsigned int flags)
+void SetWindowState(int windowID, unsigned int flags)
 {
 #if defined(PLATFORM_DESKTOP)
     // Check previous state and requested state to apply required changes
     // NOTE: In most cases the functions already change the flags internally
 
     // State change: FLAG_VSYNC_HINT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_VSYNC_HINT) != (flags & FLAG_VSYNC_HINT)) && ((flags & FLAG_VSYNC_HINT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_VSYNC_HINT) != (flags & FLAG_VSYNC_HINT)) && ((flags & FLAG_VSYNC_HINT) > 0))
     {
         glfwSwapInterval(1);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_VSYNC_HINT;
+        CORE.Window[windowID].flags |= FLAG_VSYNC_HINT;
     }
 
     // State change: FLAG_FULLSCREEN_MODE
-    if ((CORE.Window[CORE.currentWindow].flags & FLAG_FULLSCREEN_MODE) != (flags & FLAG_FULLSCREEN_MODE))
+    if ((CORE.Window[windowID].flags & FLAG_FULLSCREEN_MODE) != (flags & FLAG_FULLSCREEN_MODE))
     {
         ToggleFullscreen();     // NOTE: Window state flag updated inside function
     }
 
     // State change: FLAG_WINDOW_RESIZABLE
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_RESIZABLE) != (flags & FLAG_WINDOW_RESIZABLE)) && ((flags & FLAG_WINDOW_RESIZABLE) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_RESIZABLE) != (flags & FLAG_WINDOW_RESIZABLE)) && ((flags & FLAG_WINDOW_RESIZABLE) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_RESIZABLE, GLFW_TRUE);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_RESIZABLE;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_RESIZABLE, GLFW_TRUE);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_RESIZABLE;
     }
 
     // State change: FLAG_WINDOW_UNDECORATED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_UNDECORATED) != (flags & FLAG_WINDOW_UNDECORATED)) && (flags & FLAG_WINDOW_UNDECORATED))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_UNDECORATED) != (flags & FLAG_WINDOW_UNDECORATED)) && (flags & FLAG_WINDOW_UNDECORATED))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_DECORATED, GLFW_FALSE);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_UNDECORATED;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_DECORATED, GLFW_FALSE);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_UNDECORATED;
     }
 
     // State change: FLAG_WINDOW_HIDDEN
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIDDEN) != (flags & FLAG_WINDOW_HIDDEN)) && ((flags & FLAG_WINDOW_HIDDEN) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_HIDDEN) != (flags & FLAG_WINDOW_HIDDEN)) && ((flags & FLAG_WINDOW_HIDDEN) > 0))
     {
-        glfwHideWindow(CORE.Window[CORE.currentWindow].handle);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_HIDDEN;
+        glfwHideWindow(CORE.Window[windowID].handle);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_HIDDEN;
     }
 
     // State change: FLAG_WINDOW_MINIMIZED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MINIMIZED) != (flags & FLAG_WINDOW_MINIMIZED)) && ((flags & FLAG_WINDOW_MINIMIZED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_MINIMIZED) != (flags & FLAG_WINDOW_MINIMIZED)) && ((flags & FLAG_WINDOW_MINIMIZED) > 0))
     {
         //GLFW_ICONIFIED
-        MinimizeWindow();       // NOTE: Window state flag updated inside function
+        MinimizeWindow(windowID);       // NOTE: Window state flag updated inside function
     }
 
     // State change: FLAG_WINDOW_MAXIMIZED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MAXIMIZED) != (flags & FLAG_WINDOW_MAXIMIZED)) && ((flags & FLAG_WINDOW_MAXIMIZED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_MAXIMIZED) != (flags & FLAG_WINDOW_MAXIMIZED)) && ((flags & FLAG_WINDOW_MAXIMIZED) > 0))
     {
         //GLFW_MAXIMIZED
-        MaximizeWindow();       // NOTE: Window state flag updated inside function
+        MaximizeWindow(windowID);       // NOTE: Window state flag updated inside function
     }
 
     // State change: FLAG_WINDOW_UNFOCUSED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_UNFOCUSED) != (flags & FLAG_WINDOW_UNFOCUSED)) && ((flags & FLAG_WINDOW_UNFOCUSED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_UNFOCUSED) != (flags & FLAG_WINDOW_UNFOCUSED)) && ((flags & FLAG_WINDOW_UNFOCUSED) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_UNFOCUSED;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_UNFOCUSED;
     }
 
     // State change: FLAG_WINDOW_TOPMOST
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_TOPMOST) != (flags & FLAG_WINDOW_TOPMOST)) && ((flags & FLAG_WINDOW_TOPMOST) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_TOPMOST) != (flags & FLAG_WINDOW_TOPMOST)) && ((flags & FLAG_WINDOW_TOPMOST) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_FLOATING, GLFW_TRUE);
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_TOPMOST;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_FLOATING, GLFW_TRUE);
+        CORE.Window[windowID].flags |= FLAG_WINDOW_TOPMOST;
     }
 
     // State change: FLAG_WINDOW_ALWAYS_RUN
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_ALWAYS_RUN) != (flags & FLAG_WINDOW_ALWAYS_RUN)) && ((flags & FLAG_WINDOW_ALWAYS_RUN) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_ALWAYS_RUN) != (flags & FLAG_WINDOW_ALWAYS_RUN)) && ((flags & FLAG_WINDOW_ALWAYS_RUN) > 0))
     {
-        CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_ALWAYS_RUN;
+        CORE.Window[windowID].flags |= FLAG_WINDOW_ALWAYS_RUN;
     }
 
     // The following states can not be changed after window creation
 
     // State change: FLAG_WINDOW_TRANSPARENT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_TRANSPARENT) != (flags & FLAG_WINDOW_TRANSPARENT)) && ((flags & FLAG_WINDOW_TRANSPARENT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_TRANSPARENT) != (flags & FLAG_WINDOW_TRANSPARENT)) && ((flags & FLAG_WINDOW_TRANSPARENT) > 0))
     {
         TRACELOG(LOG_WARNING, "WINDOW: Framebuffer transparency can only by configured before window initialization");
     }
 
     // State change: FLAG_WINDOW_HIGHDPI
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIGHDPI) != (flags & FLAG_WINDOW_HIGHDPI)) && ((flags & FLAG_WINDOW_HIGHDPI) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_HIGHDPI) != (flags & FLAG_WINDOW_HIGHDPI)) && ((flags & FLAG_WINDOW_HIGHDPI) > 0))
     {
         TRACELOG(LOG_WARNING, "WINDOW: High DPI can only by configured before window initialization");
     }
 
     // State change: FLAG_MSAA_4X_HINT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_MSAA_4X_HINT) != (flags & FLAG_MSAA_4X_HINT)) && ((flags & FLAG_MSAA_4X_HINT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_MSAA_4X_HINT) != (flags & FLAG_MSAA_4X_HINT)) && ((flags & FLAG_MSAA_4X_HINT) > 0))
     {
         TRACELOG(LOG_WARNING, "WINDOW: MSAA can only by configured before window initialization");
     }
 
     // State change: FLAG_INTERLACED_HINT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_INTERLACED_HINT) != (flags & FLAG_INTERLACED_HINT)) && ((flags & FLAG_INTERLACED_HINT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_INTERLACED_HINT) != (flags & FLAG_INTERLACED_HINT)) && ((flags & FLAG_INTERLACED_HINT) > 0))
     {
         TRACELOG(LOG_WARNING, "RPI: Interlaced mode can only by configured before window initialization");
     }
@@ -1385,109 +1408,118 @@ void SetWindowState(unsigned int flags)
 }
 
 // Clear window configuration state flags
-void ClearWindowState(unsigned int flags)
+void ClearWindowState(int windowID, unsigned int flags)
 {
 #if defined(PLATFORM_DESKTOP)
     // Check previous state and requested state to apply required changes
     // NOTE: In most cases the functions already change the flags internally
 
     // State change: FLAG_VSYNC_HINT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_VSYNC_HINT) > 0) && ((flags & FLAG_VSYNC_HINT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_VSYNC_HINT) > 0) && ((flags & FLAG_VSYNC_HINT) > 0))
     {
         glfwSwapInterval(0);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_VSYNC_HINT;
+        CORE.Window[windowID].flags &= ~FLAG_VSYNC_HINT;
     }
 
     // State change: FLAG_FULLSCREEN_MODE
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_FULLSCREEN_MODE) > 0) && ((flags & FLAG_FULLSCREEN_MODE) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_FULLSCREEN_MODE) > 0) && ((flags & FLAG_FULLSCREEN_MODE) > 0))
     {
         ToggleFullscreen();     // NOTE: Window state flag updated inside function
     }
 
     // State change: FLAG_WINDOW_RESIZABLE
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_RESIZABLE) > 0) && ((flags & FLAG_WINDOW_RESIZABLE) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_RESIZABLE) > 0) && ((flags & FLAG_WINDOW_RESIZABLE) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_RESIZABLE, GLFW_FALSE);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_RESIZABLE;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_RESIZABLE, GLFW_FALSE);
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_RESIZABLE;
     }
 
     // State change: FLAG_WINDOW_UNDECORATED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_UNDECORATED) > 0) && ((flags & FLAG_WINDOW_UNDECORATED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_UNDECORATED) > 0) && ((flags & FLAG_WINDOW_UNDECORATED) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_DECORATED, GLFW_TRUE);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_UNDECORATED;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_DECORATED, GLFW_TRUE);
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_UNDECORATED;
     }
 
     // State change: FLAG_WINDOW_HIDDEN
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIDDEN) > 0) && ((flags & FLAG_WINDOW_HIDDEN) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_HIDDEN) > 0) && ((flags & FLAG_WINDOW_HIDDEN) > 0))
     {
-        glfwShowWindow(CORE.Window[CORE.currentWindow].handle);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_HIDDEN;
+        glfwShowWindow(CORE.Window[windowID].handle);
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_HIDDEN;
     }
 
     // State change: FLAG_WINDOW_MINIMIZED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MINIMIZED) > 0) && ((flags & FLAG_WINDOW_MINIMIZED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_MINIMIZED) > 0) && ((flags & FLAG_WINDOW_MINIMIZED) > 0))
     {
-        RestoreWindow();       // NOTE: Window state flag updated inside function
+        RestoreWindow(windowID);       // NOTE: Window state flag updated inside function
     }
 
     // State change: FLAG_WINDOW_MAXIMIZED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MAXIMIZED) > 0) && ((flags & FLAG_WINDOW_MAXIMIZED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_MAXIMIZED) > 0) && ((flags & FLAG_WINDOW_MAXIMIZED) > 0))
     {
-        RestoreWindow();       // NOTE: Window state flag updated inside function
+        RestoreWindow(windowID);       // NOTE: Window state flag updated inside function
     }
 
     // State change: FLAG_WINDOW_UNFOCUSED
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_UNFOCUSED) > 0) && ((flags & FLAG_WINDOW_UNFOCUSED) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_UNFOCUSED) > 0) && ((flags & FLAG_WINDOW_UNFOCUSED) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_UNFOCUSED;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_UNFOCUSED;
     }
 
     // State change: FLAG_WINDOW_TOPMOST
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_TOPMOST) > 0) && ((flags & FLAG_WINDOW_TOPMOST) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_TOPMOST) > 0) && ((flags & FLAG_WINDOW_TOPMOST) > 0))
     {
-        glfwSetWindowAttrib(CORE.Window[CORE.currentWindow].handle, GLFW_FLOATING, GLFW_FALSE);
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_TOPMOST;
+        glfwSetWindowAttrib(CORE.Window[windowID].handle, GLFW_FLOATING, GLFW_FALSE);
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_TOPMOST;
     }
 
     // State change: FLAG_WINDOW_ALWAYS_RUN
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_ALWAYS_RUN) > 0) && ((flags & FLAG_WINDOW_ALWAYS_RUN) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_ALWAYS_RUN) > 0) && ((flags & FLAG_WINDOW_ALWAYS_RUN) > 0))
     {
-        CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_ALWAYS_RUN;
+        CORE.Window[windowID].flags &= ~FLAG_WINDOW_ALWAYS_RUN;
     }
 
     // The following states can not be changed after window creation
 
     // State change: FLAG_WINDOW_TRANSPARENT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_TRANSPARENT) > 0) && ((flags & FLAG_WINDOW_TRANSPARENT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_TRANSPARENT) > 0) && ((flags & FLAG_WINDOW_TRANSPARENT) > 0))
     {
         TRACELOG(LOG_WARNING, "WINDOW: Framebuffer transparency can only by configured before window initialization");
     }
 
     // State change: FLAG_WINDOW_HIGHDPI
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIGHDPI) > 0) && ((flags & FLAG_WINDOW_HIGHDPI) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_WINDOW_HIGHDPI) > 0) && ((flags & FLAG_WINDOW_HIGHDPI) > 0))
     {
         TRACELOG(LOG_WARNING, "WINDOW: High DPI can only by configured before window initialization");
     }
 
     // State change: FLAG_MSAA_4X_HINT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_MSAA_4X_HINT) > 0) && ((flags & FLAG_MSAA_4X_HINT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_MSAA_4X_HINT) > 0) && ((flags & FLAG_MSAA_4X_HINT) > 0))
     {
         TRACELOG(LOG_WARNING, "WINDOW: MSAA can only by configured before window initialization");
     }
 
     // State change: FLAG_INTERLACED_HINT
-    if (((CORE.Window[CORE.currentWindow].flags & FLAG_INTERLACED_HINT) > 0) && ((flags & FLAG_INTERLACED_HINT) > 0))
+    if (((CORE.Window[windowID].flags & FLAG_INTERLACED_HINT) > 0) && ((flags & FLAG_INTERLACED_HINT) > 0))
     {
         TRACELOG(LOG_WARNING, "RPI: Interlaced mode can only by configured before window initialization");
     }
 #endif
 }
 
+//CUSTOM
+//Focuses a window and brings it to the top
+void FocusWindow(int windowID)
+{
+#if defined(PLATFORM_DESKTOP)
+    glfwFocusWindow(CORE.Window[windowID].handle);
+#endif
+}
+
 // Set icon for window (only PLATFORM_DESKTOP)
 // NOTE: Image must be in RGBA format, 8bit per channel
-void SetWindowIcon(Image image)
+void SetWindowIcon(int windowID, Image image)
 {
 #if defined(PLATFORM_DESKTOP)
     if (image.format == PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
@@ -1500,31 +1532,31 @@ void SetWindowIcon(Image image)
 
         // NOTE 1: We only support one image icon
         // NOTE 2: The specified image data is copied before this function returns
-        glfwSetWindowIcon(CORE.Window[CORE.currentWindow].handle, 1, icon);
+        glfwSetWindowIcon(CORE.Window[windowID].handle, 1, icon);
     }
     else TRACELOG(LOG_WARNING, "GLFW: Window icon image must be in R8G8B8A8 pixel format");
 #endif
 }
 
 // Set title for window (only PLATFORM_DESKTOP)
-void SetWindowTitle(const char *title)
+void SetWindowTitle(int windowID, const char *title)
 {
-    CORE.Window[CORE.currentWindow].title = title;
+    CORE.Window[windowID].title = title;
 #if defined(PLATFORM_DESKTOP)
-    glfwSetWindowTitle(CORE.Window[CORE.currentWindow].handle, title);
+    glfwSetWindowTitle(CORE.Window[windowID].handle, title);
 #endif
 }
 
 // Set window position on screen (windowed mode)
-void SetWindowPosition(int x, int y)
+void SetWindowPosition(int windowID, int x, int y)
 {
 #if defined(PLATFORM_DESKTOP)
-    glfwSetWindowPos(CORE.Window[CORE.currentWindow].handle, x, y);
+    glfwSetWindowPos(CORE.Window[windowID].handle, x, y);
 #endif
 }
 
 // Set monitor for the current window (fullscreen mode)
-void SetWindowMonitor(int monitor)
+void SetWindowMonitor(int windowID, int monitor)
 {
 #if defined(PLATFORM_DESKTOP)
     int monitorCount = 0;
@@ -1535,26 +1567,26 @@ void SetWindowMonitor(int monitor)
         TRACELOG(LOG_INFO, "GLFW: Selected fullscreen monitor: [%i] %s", monitor, glfwGetMonitorName(monitors[monitor]));
 
         const GLFWvidmode *mode = glfwGetVideoMode(monitors[monitor]);
-        glfwSetWindowMonitor(CORE.Window[CORE.currentWindow].handle, monitors[monitor], 0, 0, mode->width, mode->height, mode->refreshRate);
+        glfwSetWindowMonitor(CORE.Window[windowID].handle, monitors[monitor], 0, 0, mode->width, mode->height, mode->refreshRate);
     }
     else TRACELOG(LOG_WARNING, "GLFW: Failed to find selected monitor");
 #endif
 }
 
 // Set window minimum dimensions (FLAG_WINDOW_RESIZABLE)
-void SetWindowMinSize(int width, int height)
+void SetWindowMinSize(int windowID, int width, int height)
 {
 #if defined(PLATFORM_DESKTOP)
     const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    glfwSetWindowSizeLimits(CORE.Window[CORE.currentWindow].handle, width, height, mode->width, mode->height);
+    glfwSetWindowSizeLimits(CORE.Window[windowID].handle, width, height, mode->width, mode->height);
 #endif
 }
 
 // Set window dimensions
-void SetWindowSize(int width, int height, int contextID)
+void SetWindowSize(int windowID, int width, int height)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    glfwSetWindowSize(CORE.Window[contextID].handle, width, height);
+    glfwSetWindowSize(CORE.Window[windowID].handle, width, height);
 #endif
 #if defined(PLATFORM_WEB)
     //emscripten_set_canvas_size(width, height);  // DEPRECATED!
@@ -1566,35 +1598,35 @@ void SetWindowSize(int width, int height, int contextID)
 }
 
 // Get current screen width
-int GetScreenWidth(void)
+int GetScreenWidth(int windowID)
 {
-    return CORE.Window[CORE.currentWindow].screen.width;
+    return CORE.Window[windowID].screen.width;
 }
 
 // Get current screen height
-int GetScreenHeight(void)
+int GetScreenHeight(int windowID)
 {
-    return CORE.Window[CORE.currentWindow].screen.height;
+    return CORE.Window[windowID].screen.height;
 }
 
 // Get current render width which is equal to screen width * dpi scale
-int GetRenderWidth(void)
+int GetRenderWidth(int windowID)
 {
-    return CORE.Window[CORE.currentWindow].render.width;
+    return CORE.Window[windowID].render.width;
 }
 
 // Get current screen height which is equal to screen height * dpi scale
-int GetRenderHeight(void)
+int GetRenderHeight(int windowID)
 {
-    return CORE.Window[CORE.currentWindow].render.height;
+    return CORE.Window[windowID].render.height;
 }
 
 // Get native window handle
-void *GetWindowHandle(void)
+void *GetWindowHandle(int windowID)
 {
 #if defined(PLATFORM_DESKTOP) && defined(_WIN32)
     // NOTE: Returned handle is: void *HWND (windows.h)
-    return glfwGetWin32Window(CORE.Window[CORE.currentWindow].handle);
+    return glfwGetWin32Window(CORE.Window[windowID].handle);
 #endif
 #if defined(__linux__)
     // NOTE: Returned handle is: unsigned long Window (X.h)
@@ -1611,6 +1643,11 @@ void *GetWindowHandle(void)
     return NULL;
 }
 
+void *GetGLFWHandle(int windowID)
+{
+    return CORE.Window[windowID].handle; 
+}
+
 // Get number of monitors
 int GetMonitorCount(void)
 {
@@ -1624,7 +1661,7 @@ int GetMonitorCount(void)
 }
 
 // Get number of monitors
-int GetCurrentMonitor(void)
+int GetCurrentMonitor(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
     int monitorCount;
@@ -1634,9 +1671,9 @@ int GetCurrentMonitor(void)
     if (monitorCount == 1) // easy out
         return 0;
 
-    if (IsWindowFullscreen())
+    if (IsWindowFullscreen(windowID))
     {
-        monitor = glfwGetWindowMonitor(CORE.Window[CORE.currentWindow].handle);
+        monitor = glfwGetWindowMonitor(CORE.Window[windowID].handle);
         for (int i = 0; i < monitorCount; i++)
         {
             if (monitors[i] == monitor)
@@ -1649,7 +1686,7 @@ int GetCurrentMonitor(void)
         int x = 0;
         int y = 0;
 
-        glfwGetWindowPos(CORE.Window[CORE.currentWindow].handle, &x, &y);
+        glfwGetWindowPos(CORE.Window[windowID].handle, &x, &y);
 
         for (int i = 0; i < monitorCount; i++)
         {
@@ -1791,25 +1828,25 @@ int GetMonitorRefreshRate(int monitor)
 }
 
 // Get window position XY on monitor
-Vector2 GetWindowPosition(unsigned int contextID)
+Vector2 GetWindowPosition(unsigned int windowID)
 {
     int x = 0;
     int y = 0;
 #if defined(PLATFORM_DESKTOP)
-    glfwGetWindowPos(CORE.Window[contextID].handle, &x, &y);
+    glfwGetWindowPos(CORE.Window[windowID].handle, &x, &y);
 #endif
     return (Vector2){ (float)x, (float)y };
 }
 
 // Get window scale DPI factor
-Vector2 GetWindowScaleDPI(void)
+Vector2 GetWindowScaleDPI(int windowID)
 {
     Vector2 scale = { 1.0f, 1.0f };
 
 #if defined(PLATFORM_DESKTOP)
     float xdpi = 1.0;
     float ydpi = 1.0;
-    Vector2 windowPos = GetWindowPosition(CORE.currentWindow);
+    Vector2 windowPos = GetWindowPosition(windowID);
 
     int monitorCount = 0;
     GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
@@ -1853,6 +1890,7 @@ const char *GetMonitorName(int monitor)
 
 // Get clipboard text content
 // NOTE: returned string is allocated and freed by GLFW
+// NOTE(ahmayk): Why the heck does this requie the window? What secrets is it hiding? 
 const char *GetClipboardText(void)
 {
 #if defined(PLATFORM_DESKTOP)
@@ -1871,36 +1909,37 @@ void SetClipboardText(const char *text)
 }
 
 // Show mouse cursor
-void ShowCursor(void)
+void ShowCursor(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    glfwSetInputMode(CORE.Window[CORE.currentWindow].handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 #endif
 
     CORE.Input.Mouse.cursorHidden = false;
 }
 
 // Hides mouse cursor
-void HideCursor(void)
+void HideCursor(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    glfwSetInputMode(CORE.Window[CORE.currentWindow].handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 #endif
 
     CORE.Input.Mouse.cursorHidden = true;
 }
 
 // Check if cursor is not visible
+//NOTE(Ahmayk): this is probably broken
 bool IsCursorHidden(void)
 {
     return CORE.Input.Mouse.cursorHidden;
 }
 
 // Enables cursor (unlock cursor)
-void EnableCursor(void)
+void EnableCursor(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    glfwSetInputMode(CORE.Window[CORE.currentWindow].handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 #endif
 #if defined(PLATFORM_WEB)
     emscripten_exit_pointerlock();
@@ -1910,10 +1949,10 @@ void EnableCursor(void)
 }
 
 // Disables cursor (lock cursor)
-void DisableCursor(void)
+void DisableCursor(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
-    glfwSetInputMode(CORE.Window[CORE.currentWindow].handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 #endif
 #if defined(PLATFORM_WEB)
     emscripten_request_pointerlock("#canvas", 1);
@@ -1923,20 +1962,14 @@ void DisableCursor(void)
 }
 
 // Check if cursor is on the current screen.
-bool IsCursorOnScreen(int contextIndex)
+bool IsCursorOnScreen(int windowID)
 {
-    bool result = false;
-    for (int i = 0;
-         i < MAX_CONTEXTS;
-         i++)
+    for (int i = 0; i < CORE.numWindows; i++)
     {
-        if (CORE.Window[i].contextIndex == contextIndex && CORE.Window[i].mouseOnThisWindow)
-        {
-            result = true;
-            break;
-        }
+        if (CORE.Window[i].contextIndex == windowID && CORE.Window[i].mouseOnThisWindow)
+            return true;
     }
-    return result;
+    return false;
 }
 
 // Set background color (framebuffer clear color)
@@ -1947,13 +1980,15 @@ void ClearBackground(Color color)
 }
 
 // Setup canvas (framebuffer) to start drawing
-void BeginDrawing(unsigned int contextID)
+void BeginDrawing(unsigned int windowID)
 {
     // WARNING: Previously to BeginDrawing() other render textures drawing could happen,
     // consequently the measure for update vs draw is not accurate (only the total frame time is accurate)
+    Assert(isDrawingDirectlyIntoWindow);
+    isDrawingDirectlyIntoWindow = true;
 
-    CORE.currentWindow = contextID;
-    rlSetContext(contextID);
+    CORE.currentWindow = windowID;
+    rlSetContext(windowID);
     glfwMakeContextCurrent(CORE.Window[CORE.currentWindow].handle);
 
     CORE.Time.current = GetTime();      // Number of elapsed seconds since InitTimer()
@@ -1970,6 +2005,9 @@ void BeginDrawing(unsigned int contextID)
 // End canvas drawing and swap buffers (double buffering)
 void EndDrawing(void)
 {
+    Assert(!isDrawingDirectlyIntoWindow);
+    isDrawingDirectlyIntoWindow = false;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
 #if defined(SUPPORT_MOUSE_CURSOR_POINT)
@@ -2165,6 +2203,9 @@ void EndMode3D(void)
 // Initializes render texture for drawing
 void BeginTextureMode(RenderTexture2D target)
 {
+    Assert(isDrawingIntoTexture);
+    isDrawingIntoTexture = true;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlEnableFramebuffer(target.id); // Enable render target
@@ -2193,6 +2234,9 @@ void BeginTextureMode(RenderTexture2D target)
 // Ends drawing to render texture
 void EndTextureMode(void)
 {
+    Assert(!isDrawingIntoTexture);
+    isDrawingIntoTexture = false;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlDisableFramebuffer();         // Disable render target (fbo)
@@ -2232,21 +2276,21 @@ void EndBlendMode(void)
 
 // Begin scissor mode (define screen area for following drawing)
 // NOTE: Scissor rec refers to bottom-left corner, we change it to upper-left
-void BeginScissorMode(int x, int y, int width, int height)
+void BeginScissorMode(int windowID, int x, int y, int width, int height)
 {
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlEnableScissorTest();
 
-    if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIGHDPI) > 0)
+    if ((CORE.Window[windowID].flags & FLAG_WINDOW_HIGHDPI) > 0)
     {
-        Vector2 scale = GetWindowScaleDPI();
+        Vector2 scale = GetWindowScaleDPI(windowID);
 
-        rlScissor((int)(x*scale.x), (int)(CORE.Window[CORE.currentWindow].currentFbo.height - (y + height)*scale.y), (int)(width*scale.x), (int)(height*scale.y));
+        rlScissor((int)(x*scale.x), (int)(CORE.Window[windowID].currentFbo.height - (y + height)*scale.y), (int)(width*scale.x), (int)(height*scale.y));
     }
     else
     {
-        rlScissor(x, CORE.Window[CORE.currentWindow].currentFbo.height - (y + height), width, height);
+        rlScissor(x, CORE.Window[windowID].currentFbo.height - (y + height), width, height);
     }
 }
 
@@ -2475,14 +2519,14 @@ void SetShaderValueTexture(Shader shader, int locIndex, Texture2D texture)
 }
 
 // Get a ray trace from mouse position
-Ray GetMouseRay(Vector2 mouse, Camera camera)
+Ray GetMouseRay(int windowID, Vector2 mouse, Camera camera)
 {
     Ray ray = { 0 };
 
     // Calculate normalized device coordinates
     // NOTE: y value is negative
-    float x = (2.0f*mouse.x)/(float)GetScreenWidth() - 1.0f;
-    float y = 1.0f - (2.0f*mouse.y)/(float)GetScreenHeight();
+    float x = (2.0f*mouse.x)/(float)GetScreenWidth(windowID) - 1.0f;
+    float y = 1.0f - (2.0f*mouse.y)/(float)GetScreenHeight(windowID);
     float z = 1.0f;
 
     // Store values in a vector
@@ -2496,11 +2540,11 @@ Ray GetMouseRay(Vector2 mouse, Camera camera)
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
         // Calculate projection matrix from perspective
-        matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth()/(double)GetScreenHeight()), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     }
     else if (camera.projection == CAMERA_ORTHOGRAPHIC)
     {
-        float aspect = (float)CORE.Window[CORE.currentWindow].screen.width/(float)CORE.Window[CORE.currentWindow].screen.height;
+        float aspect = (float)CORE.Window[windowID].screen.width/(float)CORE.Window[windowID].screen.height;
         double top = camera.fovy/2.0;
         double right = top*aspect;
 
@@ -2564,15 +2608,15 @@ Matrix GetCameraMatrix2D(Camera2D camera)
 }
 
 // Get the screen space position from a 3d world space position
-Vector2 GetWorldToScreen(Vector3 position, Camera camera)
+Vector2 GetWorldToScreen(int windowID, Vector3 position, Camera camera)
 {
-    Vector2 screenPosition = GetWorldToScreenEx(position, camera, GetScreenWidth(), GetScreenHeight());
+    Vector2 screenPosition = GetWorldToScreenEx(windowID, position, camera, GetScreenWidth(windowID), GetScreenHeight(windowID));
 
     return screenPosition;
 }
 
 // Get size position for a 3d world space position (useful for texture drawing)
-Vector2 GetWorldToScreenEx(Vector3 position, Camera camera, int width, int height)
+Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int width, int height)
 {
     // Calculate projection matrix (from perspective instead of frustum
     Matrix matProj = MatrixIdentity();
@@ -2584,7 +2628,7 @@ Vector2 GetWorldToScreenEx(Vector3 position, Camera camera, int width, int heigh
     }
     else if (camera.projection == CAMERA_ORTHOGRAPHIC)
     {
-        float aspect = (float)CORE.Window[CORE.currentWindow].screen.width/(float)CORE.Window[CORE.currentWindow].screen.height;
+        float aspect = (float)CORE.Window[windowID].screen.width/(float)CORE.Window[windowID].screen.height;
         double top = camera.fovy/2.0;
         double right = top*aspect;
 
@@ -2703,29 +2747,29 @@ double GetTime(void)
 // NOTE: This function is expected to be called before window creation,
 // because it setups some flags for the window creation process.
 // To configure window states after creation, just use SetWindowState()
-void SetConfigFlags(unsigned int flags, unsigned int contextID)
+void SetConfigFlags(int windowID, unsigned int flags)
 {
     // Selected flags are set but not evaluated at this point,
     // flag evaluation happens at InitWindow() or SetWindowState()
-    CORE.Window[contextID].flags |= flags;
+    CORE.Window[windowID].flags |= flags;
 }
 
 //CUSTOM: Removes bitflags instead of adding them (for rare cases)
 //For before window init only
-void RemoveConfigFlags(unsigned int flags, unsigned int contextID)
+void RemoveConfigFlags(int windowID, unsigned int flags)
 {
     //TODO: play with this some more
     // flags = ~flags;
-    // CORE.Window[contextID].flags -= 0x00040000;
+    // CORE.Window[windowID].flags -= 0x00040000;
 }
 
 // NOTE TRACELOG() function is located in [utils.h]
 
 // Takes a screenshot of current screen (saved a .png)
-void TakeScreenshot(const char *fileName)
+void TakeScreenshot(int windowID, const char *fileName)
 {
-    unsigned char *imgData = rlReadScreenPixels(CORE.Window[CORE.currentWindow].render.width, CORE.Window[CORE.currentWindow].render.height);
-    Image image = { imgData, CORE.Window[CORE.currentWindow].render.width, CORE.Window[CORE.currentWindow].render.height, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+    unsigned char *imgData = rlReadScreenPixels(CORE.Window[windowID].render.width, CORE.Window[windowID].render.height);
+    Image image = { imgData, CORE.Window[windowID].render.width, CORE.Window[windowID].render.height, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
 
     char path[512] = { 0 };
     strcpy(path, TextFormat("%s/%s", CORE.Storage.basePath, fileName));
@@ -3019,29 +3063,29 @@ bool ChangeDirectory(const char *dir)
 }
 
 // Check if a file has been dropped into window
-bool IsFileDropped(void)
+bool IsFileDropped(int windowID)
 {
-    if (CORE.Window[CORE.currentWindow].dropFileCount > 0) return true;
+    if (CORE.Window[windowID].dropFileCount > 0) return true;
     else return false;
 }
 
 // Get dropped files names
-char **GetDroppedFiles(int *count)
+char **GetDroppedFiles(int windowID, int *count)
 {
-    *count = CORE.Window[CORE.currentWindow].dropFileCount;
-    return CORE.Window[CORE.currentWindow].dropFilesPath;
+    *count = CORE.Window[windowID].dropFileCount;
+    return CORE.Window[windowID].dropFilesPath;
 }
 
 // Clear dropped files paths buffer
-void ClearDroppedFiles(void)
+void ClearDroppedFiles(int windowID)
 {
-    if (CORE.Window[CORE.currentWindow].dropFileCount > 0)
+    if (CORE.Window[windowID].dropFileCount > 0)
     {
-        for (int i = 0; i < CORE.Window[CORE.currentWindow].dropFileCount; i++) RL_FREE(CORE.Window[CORE.currentWindow].dropFilesPath[i]);
+        for (int i = 0; i < CORE.Window[windowID].dropFileCount; i++) RL_FREE(CORE.Window[windowID].dropFilesPath[i]);
 
-        RL_FREE(CORE.Window[CORE.currentWindow].dropFilesPath);
+        RL_FREE(CORE.Window[windowID].dropFilesPath);
 
-        CORE.Window[CORE.currentWindow].dropFileCount = 0;
+        CORE.Window[windowID].dropFileCount = 0;
     }
 }
 
@@ -3631,12 +3675,12 @@ Vector2 GetMouseDelta(void)
 }
 
 // Set mouse position XY
-void SetMousePosition(int x, int y)
+void SetMousePosition(int windowID, int x, int y)
 {
     CORE.Input.Mouse.currentPosition = (Vector2){ (float)x, (float)y };
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
     // NOTE: emscripten not implemented
-    glfwSetCursorPos(CORE.Window[CORE.currentWindow].handle, CORE.Input.Mouse.currentPosition.x, CORE.Input.Mouse.currentPosition.y);
+    glfwSetCursorPos(CORE.Window[windowID].handle, CORE.Input.Mouse.currentPosition.x, CORE.Input.Mouse.currentPosition.y);
 #endif
 }
 
@@ -3669,15 +3713,15 @@ float GetMouseWheelMove(void)
 
 // Set mouse cursor
 // NOTE: This is a no-op on platforms other than PLATFORM_DESKTOP
-void SetMouseCursor(int cursor)
+void SetMouseCursor(int windowID, int cursor)
 {
 #if defined(PLATFORM_DESKTOP)
     CORE.Input.Mouse.cursor = cursor;
-    if (cursor == MOUSE_CURSOR_DEFAULT) glfwSetCursor(CORE.Window[CORE.currentWindow].handle, NULL);
+    if (cursor == MOUSE_CURSOR_DEFAULT) glfwSetCursor(CORE.Window[windowID].handle, NULL);
     else
     {
         // NOTE: We are relating internal GLFW enum values to our MouseCursor enum values
-        glfwSetCursor(CORE.Window[CORE.currentWindow].handle, glfwCreateStandardCursor(0x00036000 + cursor));
+        glfwSetCursor(CORE.Window[windowID].handle, glfwCreateStandardCursor(0x00036000 + cursor));
     }
 #endif
 }
@@ -4530,7 +4574,7 @@ static bool InitGraphicsDevice(int width, int height, bool noClick)
     CORE.Window[CORE.currentWindow].ready = true;
 #endif
 
-    if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MINIMIZED) > 0) MinimizeWindow();
+    if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_MINIMIZED) > 0) MinimizeWindow(CORE.currentWindow);
 
     return true;
 }
@@ -5070,7 +5114,7 @@ static EM_BOOL EmscriptenResizeCallback(int eventType, const EmscriptenUiEvent *
     CORE.Window[CORE.currentWindow].currentFbo.height = height;
     CORE.Window[CORE.currentWindow].resizedLastFrame = true;
 
-    if (IsWindowFullscreen()) return 1;
+    if (IsWindowFullscreen(0)) return 1;
 
     // Set current screen size
     CORE.Window[CORE.currentWindow].screen.width = width;
@@ -5082,35 +5126,53 @@ static EM_BOOL EmscriptenResizeCallback(int eventType, const EmscriptenUiEvent *
 }
 #endif
 
+int GetWindowIDOfGlfwWindowHandle(void *window)
+{
+    return _GetWindowIDOfGlfwWindowHandleInternal((GLFWwindow *) window);
+}
+
+int _GetWindowIDOfGlfwWindowHandleInternal(GLFWwindow *window)
+{
+    for (int i = 0; i < CORE.numWindows; i++)
+    {
+        if (CORE.Window[i].handle == window)
+            return i;
+    }
+    Assert(1);
+    return 0;
+}
+
 // GLFW3 WindowSize Callback, runs when window is resizedLastFrame
 // NOTE: Window resizing not allowed by default
 static void WindowSizeCallback(GLFWwindow *window, int width, int height)
 {
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+
     // Reset viewport and projection matrix for new size
     SetupViewport(width, height);
 
-    CORE.Window[CORE.currentWindow].currentFbo.width = width;
-    CORE.Window[CORE.currentWindow].currentFbo.height = height;
-    CORE.Window[CORE.currentWindow].resizedLastFrame = true;
+    CORE.Window[windowID].currentFbo.width = width;
+    CORE.Window[windowID].currentFbo.height = height;
+    CORE.Window[windowID].resizedLastFrame = true;
 
-    if (IsWindowFullscreen()) return;
+    if (IsWindowFullscreen(windowID)) return;
 
     // Set current screen size
 #if defined(__APPLE__)
-    CORE.Window[CORE.currentWindow].screen.width = width;
-    CORE.Window[CORE.currentWindow].screen.height = height;
+    CORE.Window[windowID].screen.width = width;
+    CORE.Window[windowID].screen.height = height;
 #else
-    if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIGHDPI) > 0)
+    if ((CORE.Window[windowID].flags & FLAG_WINDOW_HIGHDPI) > 0)
     {
-        Vector2 windowScaleDPI = GetWindowScaleDPI();
+        Vector2 windowScaleDPI = GetWindowScaleDPI(windowID);
 
-        CORE.Window[CORE.currentWindow].screen.width = (unsigned int)(width/windowScaleDPI.x);
-        CORE.Window[CORE.currentWindow].screen.height = (unsigned int)(height/windowScaleDPI.y);
+        CORE.Window[windowID].screen.width = (unsigned int)(width/windowScaleDPI.x);
+        CORE.Window[windowID].screen.height = (unsigned int)(height/windowScaleDPI.y);
     }
     else
     {
-        CORE.Window[CORE.currentWindow].screen.width = width;
-        CORE.Window[CORE.currentWindow].screen.height = height;
+        CORE.Window[windowID].screen.width = width;
+        CORE.Window[windowID].screen.height = height;
     }
 #endif
 
@@ -5120,24 +5182,30 @@ static void WindowSizeCallback(GLFWwindow *window, int width, int height)
 // GLFW3 WindowIconify Callback, runs when window is minimized/restored
 static void WindowIconifyCallback(GLFWwindow *window, int iconified)
 {
-    if (iconified) CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_MINIMIZED;  // The window was iconified
-    else CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_MINIMIZED;           // The window was restored
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+
+    if (iconified) CORE.Window[windowID].flags |= FLAG_WINDOW_MINIMIZED;  // The window was iconified
+    else CORE.Window[windowID].flags &= ~FLAG_WINDOW_MINIMIZED;           // The window was restored
 }
 
 #if !defined(PLATFORM_WEB)
 // GLFW3 WindowMaximize Callback, runs when window is maximized/restored
 static void WindowMaximizeCallback(GLFWwindow *window, int maximized)
 {
-    if (maximized) CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_MAXIMIZED;  // The window was maximized
-    else CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_MAXIMIZED;           // The window was restored
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+
+    if (maximized) CORE.Window[windowID].flags |= FLAG_WINDOW_MAXIMIZED;  // The window was maximized
+    else CORE.Window[windowID].flags &= ~FLAG_WINDOW_MAXIMIZED;           // The window was restored
 }
 #endif
 
 // GLFW3 WindowFocus Callback, runs when window get/lose focus
 static void WindowFocusCallback(GLFWwindow *window, int focused)
 {
-    if (focused) CORE.Window[CORE.currentWindow].flags &= ~FLAG_WINDOW_UNFOCUSED;   // The window was focused
-    else CORE.Window[CORE.currentWindow].flags |= FLAG_WINDOW_UNFOCUSED;            // The window lost focus
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+
+    if (focused) CORE.Window[windowID].flags &= ~FLAG_WINDOW_UNFOCUSED;   // The window was focused
+    else CORE.Window[windowID].flags |= FLAG_WINDOW_UNFOCUSED;            // The window lost focus
 }
 
 // GLFW3 Keyboard Callback, runs on key pressed
@@ -5157,7 +5225,13 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
     }
     
     // Check the exit key to set close window
-    if ((key == CORE.Input.Keyboard.exitKey) && (action == GLFW_PRESS)) glfwSetWindowShouldClose(CORE.Window[CORE.currentWindow].handle, GLFW_TRUE);
+    if ((key == CORE.Input.Keyboard.exitKey) && (action == GLFW_PRESS))
+    {
+        for (int i = 0; i < CORE.numWindows; i++)
+        {
+            glfwSetWindowShouldClose(CORE.Window[i].handle, GLFW_TRUE);
+        }
+    }
 
 #if defined(SUPPORT_SCREEN_CAPTURE)
     if ((key == GLFW_KEY_F12) && (action == GLFW_PRESS))
@@ -5187,7 +5261,8 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
                 gifRecording = true;
                 gifFrameCounter = 0;
 
-                msf_gif_begin(&gifState, CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height);
+                //NOTE(Ahmayk): Expand this if you want to take a recording of something that isn't the first window
+                msf_gif_begin(&gifState, CORE.Window[0].screen.width, CORE.Window[0].screen.height);
                 screenshotCounter++;
 
                 TRACELOG(LOG_INFO, "SYSTEM: Start animated GIF recording: %s", TextFormat("screenrec%03i.gif", screenshotCounter));
@@ -5196,7 +5271,7 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
         else
 #endif  // SUPPORT_GIF_RECORDING
         {
-            TakeScreenshot(TextFormat("screenshot%03i.png", screenshotCounter));
+            TakeScreenshot(0, TextFormat("screenshot%03i.png", screenshotCounter));
             screenshotCounter++;
         }
     }
@@ -5242,6 +5317,8 @@ static void CharCallback(GLFWwindow *window, unsigned int key)
 // GLFW3 Mouse Button Callback, runs on mouse button pressed
 static void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+
     // WARNING: GLFW could only return GLFW_PRESS (1) or GLFW_RELEASE (0) for now,
     // but future releases may add more actions (i.e. GLFW_REPEAT)
     CORE.Input.Mouse.currentButtonState[button] = action;
@@ -5265,9 +5342,9 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
     // Register touch points position, only one point registered
     gestureEvent.position[0] = GetMousePosition();
 
-    // Normalize gestureEvent.position[0] for CORE.Window[CORE.currentWindow].screen.width and CORE.Window[CORE.currentWindow].screen.height
-    gestureEvent.position[0].x /= (float)GetScreenWidth();
-    gestureEvent.position[0].y /= (float)GetScreenHeight();
+    // Normalize gestureEvent.position[0] for CORE.Window[CORE.currentWindow].screen.width and CORE.Window[windowID].screen.height
+    gestureEvent.position[0].x /= (float)GetScreenWidth(windowID);
+    gestureEvent.position[0].y /= (float)GetScreenHeight(windowID);
 
     // Gesture data is sent to gestures system for processing
     ProcessGestureEvent(gestureEvent);
@@ -5277,11 +5354,13 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
 // GLFW3 Cursor Position Callback, runs on mouse move
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 {
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
+
     CORE.Input.Mouse.currentPosition.x = (float)x;
     CORE.Input.Mouse.currentPosition.y = (float)y;
     CORE.Input.Touch.position[0] = CORE.Input.Mouse.currentPosition;
 
-    for (int i = 0; i < MAX_CONTEXTS; i++)
+    for (int i = 0; i < CORE.numWindows; i++)
     {
         CORE.Window[i].mouseOnThisWindow = CORE.Window[i].handle == window;
     }
@@ -5301,9 +5380,9 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
     // Register touch points position, only one point registered
     gestureEvent.position[0] = CORE.Input.Touch.position[0];
 
-    // Normalize gestureEvent.position[0] for CORE.Window[CORE.currentWindow].screen.width and CORE.Window[CORE.currentWindow].screen.height
-    gestureEvent.position[0].x /= (float)GetScreenWidth();
-    gestureEvent.position[0].y /= (float)GetScreenHeight();
+    // Normalize gestureEvent.position[0] for CORE.Window[windowID].screen.width and CORE.Window[windowID].screen.height
+    gestureEvent.position[0].x /= (float)GetScreenWidth(windowID);
+    gestureEvent.position[0].y /= (float)GetScreenHeight(windowID);
 
     // Gesture data is sent to gestures system for processing
     ProcessGestureEvent(gestureEvent);
@@ -5329,17 +5408,19 @@ static void CursorEnterCallback(GLFWwindow *window, int enter)
 // Everytime new files are dropped, old ones are discarded
 static void WindowDropCallback(GLFWwindow *window, int count, const char **paths)
 {
-    ClearDroppedFiles();
+    int windowID = _GetWindowIDOfGlfwWindowHandleInternal(window);
 
-    CORE.Window[CORE.currentWindow].dropFilesPath = (char **)RL_MALLOC(count*sizeof(char *));
+    ClearDroppedFiles(windowID);
+
+    CORE.Window[windowID].dropFilesPath = (char **)RL_MALLOC(count*sizeof(char *));
 
     for (int i = 0; i < count; i++)
     {
-        CORE.Window[CORE.currentWindow].dropFilesPath[i] = (char *)RL_MALLOC(MAX_FILEPATH_LENGTH*sizeof(char));
-        strcpy(CORE.Window[CORE.currentWindow].dropFilesPath[i], paths[i]);
+        CORE.Window[windowID].dropFilesPath[i] = (char *)RL_MALLOC(MAX_FILEPATH_LENGTH*sizeof(char));
+        strcpy(CORE.Window[windowID].dropFilesPath[i], paths[i]);
     }
 
-    CORE.Window[CORE.currentWindow].dropFileCount = count;
+    CORE.Window[windowID].dropFileCount = count;
 }
 #endif
 

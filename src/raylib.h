@@ -906,41 +906,44 @@ extern "C" {            // Prevents name mangling of functions
 
 // Window-related functions
 RLAPI void InitWindow(int width, int height, const char *title, bool noClick);  // Initialize window and OpenGL context
-RLAPI bool WindowShouldClose(void);                               // Check if KEY_ESCAPE pressed or Close icon pressed
-RLAPI void CloseWindow(void);                                     // Close window and unload OpenGL context
-RLAPI bool IsWindowReady(void);                                   // Check if window has been initialized successfully
-RLAPI bool IsWindowFullscreen(void);                              // Check if window is currently fullscreen
-RLAPI bool IsWindowHidden(void);                                  // Check if window is currently hidden (only PLATFORM_DESKTOP)
-RLAPI bool IsWindowMinimized(void);                               // Check if window is currently minimized (only PLATFORM_DESKTOP)
-RLAPI bool IsWindowMaximized(void);                               // Check if window is currently maximized (only PLATFORM_DESKTOP)
-RLAPI bool IsWindowFocused(void);                                 // Check if window is currently focused (only PLATFORM_DESKTOP)
-RLAPI bool IsWindowResized(void);                                 // Check if window has been resized last frame
-RLAPI bool IsWindowState(unsigned int flag);                      // Check if one specific window flag is enabled
-RLAPI void SetWindowState(unsigned int flags);                    // Set window configuration state using flags
-RLAPI void ClearWindowState(unsigned int flags);                  // Clear window configuration state flags
+RLAPI bool GameShouldClose(void);                               // Check if KEY_ESCAPE pressed or Close icon pressed
+RLAPI void CloseGame(void);                                       // Close game and unload OpenGL context (Originally "CloseWindow()")
+RLAPI void CloseSingleWindow(int windowID);                       // Close window and unload OpenGL context
+RLAPI bool IsWindowReady(int windowID);                           // Check if window has been initialized successfully
+RLAPI bool IsWindowFullscreen(int windowID);                      // Check if window is currently fullscreen
+RLAPI bool IsWindowHidden(int windowID);                          // Check if window is currently hidden (only PLATFORM_DESKTOP)
+RLAPI bool IsWindowMinimized(int windowID);                       // Check if window is currently minimized (only PLATFORM_DESKTOP)
+RLAPI bool IsWindowMaximized(int windowID);                       // Check if window is currently maximized (only PLATFORM_DESKTOP)
+RLAPI bool IsWindowFocused(int windowID);                         // Check if window is currently focused (only PLATFORM_DESKTOP)
+RLAPI bool IsWindowResized(int windowID);                         // Check if window has been resized last frame
+RLAPI bool IsWindowState(int windowID, unsigned int flag);        // Check if one specific window flag is enabled
+RLAPI void SetWindowState(int windowID, unsigned int flags);      // Set window configuration state using flags
+RLAPI void FocusWindow(int windowID);                             // [CUSTOM] Focus window to the top (only PLATFORM_DESKTOP)
+RLAPI void ClearWindowState(int windowID, unsigned int flags);    // Clear window configuration state flags
 RLAPI void ToggleFullscreen(void);                                // Toggle window state: fullscreen/windowed (only PLATFORM_DESKTOP)
-RLAPI void MaximizeWindow(void);                                  // Set window state: maximized, if resizable (only PLATFORM_DESKTOP)
-RLAPI void MinimizeWindow(void);                                  // Set window state: minimized, if resizable (only PLATFORM_DESKTOP)
-RLAPI void RestoreWindow(void);                                   // Set window state: not minimized/maximized (only PLATFORM_DESKTOP)
-RLAPI void SetWindowIcon(Image image);                            // Set icon for window (only PLATFORM_DESKTOP)
-RLAPI void SetWindowTitle(const char *title);                     // Set title for window (only PLATFORM_DESKTOP)
-RLAPI void SetWindowPosition(int x, int y);                       // Set window position on screen (only PLATFORM_DESKTOP)
-RLAPI void SetWindowMonitor(int monitor);                         // Set monitor for the current window (fullscreen mode)
-RLAPI void SetWindowMinSize(int width, int height);               // Set window minimum dimensions (for FLAG_WINDOW_RESIZABLE)
-RLAPI void SetWindowSize(int width, int height, int contextID);                  // Set window dimensions
-RLAPI void *GetWindowHandle(void);                                // Get native window handle
-RLAPI int GetScreenWidth(void);                                   // Get current screen width
-RLAPI int GetScreenHeight(void);                                  // Get current screen height
-RLAPI int GetMonitorCount(void);                                  // Get number of connected monitors
-RLAPI int GetCurrentMonitor(void);                                // Get current connected monitor
+RLAPI void MaximizeWindow(int windowID);                          // Set window state: maximized, if resizable (only PLATFORM_DESKTOP)
+RLAPI void MinimizeWindow(int windowID);                          // Set window state: minimized, if resizable (only PLATFORM_DESKTOP)
+RLAPI void RestoreWindow(int windowID);                           // Set window state: not minimized/maximized (only PLATFORM_DESKTOP)
+RLAPI void SetWindowIcon(int windowID, Image image);              // Set icon for window (only PLATFORM_DESKTOP)
+RLAPI void SetWindowTitle(int windowID, const char *title);       // Set title for window (only PLATFORM_DESKTOP)
+RLAPI void SetWindowPosition(int windowID, int x, int y);         // Set window position on screen (only PLATFORM_DESKTOP)
+RLAPI void SetWindowMonitor(int windowID, int monitor);           // Set monitor for the current window (fullscreen mode)
+RLAPI void SetWindowMinSize(int windowID, int width, int height); // Set window minimum dimensions (for FLAG_WINDOW_RESIZABLE)
+RLAPI void SetWindowSize(int windowID, int width, int height);    // Set window dimensions
+RLAPI void *GetWindowHandle(int windowID);                        // Get native window handle
+RLAPI void *GetGLFWHandle(int windowID);                          // [CUSTOM] Get GLFW window handle
+RLAPI int GetScreenWidth(int windowID);                           // Get current screen width
+RLAPI int GetScreenHeight(int windowID);                          // Get current screen height
+RLAPI int GetMonitorCount();                                      // Get number of connected monitors
+RLAPI int GetCurrentMonitor(int windowID);                        // Get current connected monitor
 RLAPI Vector2 GetMonitorPosition(int monitor);                    // Get specified monitor position
 RLAPI int GetMonitorWidth(int monitor);                           // Get specified monitor width (max available by monitor)
 RLAPI int GetMonitorHeight(int monitor);                          // Get specified monitor height (max available by monitor)
 RLAPI int GetMonitorPhysicalWidth(int monitor);                   // Get specified monitor physical width in millimetres
 RLAPI int GetMonitorPhysicalHeight(int monitor);                  // Get specified monitor physical height in millimetres
 RLAPI int GetMonitorRefreshRate(int monitor);                     // Get specified monitor refresh rate
-RLAPI Vector2 GetWindowPosition(unsigned int contextID);          // Get window position XY on monitor
-RLAPI Vector2 GetWindowScaleDPI(void);                            // Get window scale DPI factor
+RLAPI Vector2 GetWindowPosition(unsigned int windowID);           // Get window position XY on monitor
+RLAPI Vector2 GetWindowScaleDPI(int windowID);                    // Get window scale DPI factor
 RLAPI const char *GetMonitorName(int monitor);                    // Get the human-readable, UTF-8 encoded name of the primary monitor
 RLAPI void SetClipboardText(const char *text);                    // Set clipboard text content
 RLAPI const char *GetClipboardText(void);                         // Get clipboard text content
@@ -954,16 +957,16 @@ RLAPI void PollInputEvents(void);                                 // Register al
 RLAPI void WaitTime(float ms);                                    // Wait for some milliseconds (halt program execution)
 
 // Cursor-related functions
-RLAPI void ShowCursor(void);                                      // Shows cursor
-RLAPI void HideCursor(void);                                      // Hides cursor
-RLAPI bool IsCursorHidden(void);                                  // Check if cursor is not visible
-RLAPI void EnableCursor(void);                                    // Enables cursor (unlock cursor)
-RLAPI void DisableCursor(void);                                   // Disables cursor (lock cursor)
-RLAPI bool IsCursorOnScreen(int contextIndex);                                // Check if cursor is on the screen
+RLAPI void ShowCursor(int windowID);                              // Shows cursor
+RLAPI void HideCursor(int windowID);                              // Hides cursor
+RLAPI bool IsCursorHidden();                                      // Check if cursor is not visible
+RLAPI void EnableCursor(int windowID);                            // Enables cursor (unlock cursor)
+RLAPI void DisableCursor(int windowID);                           // Disables cursor (lock cursor)
+RLAPI bool IsCursorOnScreen(int windowID);                        // Check if cursor is on the screen
 
 // Drawing-related functions
 RLAPI void ClearBackground(Color color);                          // Set background color (framebuffer clear color)
-RLAPI void BeginDrawing(unsigned int contextID);                  // Setup canvas (framebuffer) to start drawing
+RLAPI void BeginDrawing(unsigned int windowID);                   // Setup canvas (framebuffer) to start drawing
 RLAPI void EndDrawing(void);                                      // End canvas drawing and swap buffers (double buffering)
 RLAPI void BeginMode2D(Camera2D camera);                          // Begin 2D mode with custom camera (2D)
 RLAPI void EndMode2D(void);                                       // Ends 2D mode with custom camera
@@ -975,7 +978,7 @@ RLAPI void BeginShaderMode(Shader shader);                        // Begin custo
 RLAPI void EndShaderMode(void);                                   // End custom shader drawing (use default shader)
 RLAPI void BeginBlendMode(int mode);                              // Begin blending mode (alpha, additive, multiplied, subtract, custom)
 RLAPI void EndBlendMode(void);                                    // End blending mode (reset to default: alpha blending)
-RLAPI void BeginScissorMode(int x, int y, int width, int height); // Begin scissor mode (define screen area for following drawing)
+RLAPI void BeginScissorMode(int windowID, int x, int y, int width, int height); // Begin scissor mode (define screen area for following drawing)
 RLAPI void EndScissorMode(void);                                  // End scissor mode
 RLAPI void BeginVrStereoMode(VrStereoConfig config);              // Begin stereo rendering (requires VR simulator)
 RLAPI void EndVrStereoMode(void);                                 // End stereo rendering (requires VR simulator)
@@ -997,11 +1000,11 @@ RLAPI void SetShaderValueTexture(Shader shader, int locIndex, Texture2D texture)
 RLAPI void UnloadShader(Shader shader);                                    // Unload shader from GPU memory (VRAM)
 
 // Screen-space-related functions
-RLAPI Ray GetMouseRay(Vector2 mousePosition, Camera camera);      // Get a ray trace from mouse position
+RLAPI Ray GetMouseRay(int windowID, Vector2 mousePosition, Camera camera); // Get a ray trace from mouse position
 RLAPI Matrix GetCameraMatrix(Camera camera);                      // Get camera transform matrix (view matrix)
 RLAPI Matrix GetCameraMatrix2D(Camera2D camera);                  // Get camera 2d transform matrix
-RLAPI Vector2 GetWorldToScreen(Vector3 position, Camera camera);  // Get the screen space position for a 3d world space position
-RLAPI Vector2 GetWorldToScreenEx(Vector3 position, Camera camera, int width, int height); // Get size position for a 3d world space position
+RLAPI Vector2 GetWorldToScreen(int windowID, Vector3 position, Camera camera);  // Get the screen space position for a 3d world space position
+RLAPI Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int width, int height);   // Get size position for a 3d world space position
 RLAPI Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera); // Get the screen space position for a 2d camera world space position
 RLAPI Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera); // Get the world space position for a 2d camera screen space position
 
@@ -1014,9 +1017,9 @@ RLAPI double GetTime(void);                                       // Get elapsed
 // Misc. functions
 RLAPI int GetRandomValue(int min, int max);                       // Get a random value between min and max (both included)
 RLAPI void SetRandomSeed(unsigned int seed);                      // Set the seed for the random number generator
-RLAPI void TakeScreenshot(const char *fileName);                  // Takes a screenshot of current screen (filename extension defines format)
-RLAPI void SetConfigFlags(unsigned int flags, unsigned int contextID);                    // Setup init configuration flags (view FLAGS)
-RLAPI void RemoveConfigFlags(unsigned int flags, unsigned int contextID);                    // Setup init configuration flags (view FLAGS)
+RLAPI void TakeScreenshot(int windowID, const char *fileName);    // Takes a screenshot of current screen (filename extension defines format)
+RLAPI void SetConfigFlags(int windowID, unsigned int flags);          // Setup init configuration flags (view FLAGS)
+RLAPI void RemoveConfigFlags(int windowID, unsigned int flags);       // Setup init configuration flags (view FLAGS)
 
 RLAPI void TraceLog(int logLevel, const char *text, ...);         // Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR...)
 RLAPI void SetTraceLogLevel(int logLevel);                        // Set the current threshold (minimum) log level
@@ -1031,6 +1034,9 @@ RLAPI void SetLoadFileDataCallback(LoadFileDataCallback callback); // Set custom
 RLAPI void SetSaveFileDataCallback(SaveFileDataCallback callback); // Set custom file binary data saver
 RLAPI void SetLoadFileTextCallback(LoadFileTextCallback callback); // Set custom file text data loader
 RLAPI void SetSaveFileTextCallback(SaveFileTextCallback callback); // Set custom file text data saver
+
+// Real custom callback zone
+RLAPI int GetWindowIDOfGlfwWindowHandle(void *window);             // [CUSTOM] Get the windowID of a GLFWwindow handle
 
 // Files management functions
 RLAPI unsigned char *LoadFileData(const char *fileName, unsigned int *bytesRead);     // Load file data as byte array (read)
@@ -1051,9 +1057,9 @@ RLAPI const char *GetWorkingDirectory(void);                      // Get current
 RLAPI char **GetDirectoryFiles(const char *dirPath, int *count);  // Get filenames in a directory path (memory should be freed)
 RLAPI void ClearDirectoryFiles(void);                             // Clear directory files paths buffers (free memory)
 RLAPI bool ChangeDirectory(const char *dir);                      // Change working directory, return true on success
-RLAPI bool IsFileDropped(void);                                   // Check if a file has been dropped into window
-RLAPI char **GetDroppedFiles(int *count);                         // Get dropped files names (memory should be freed)
-RLAPI void ClearDroppedFiles(void);                               // Clear dropped files paths buffer (free memory)
+RLAPI bool IsFileDropped(int windowID);                           // Check if a file has been dropped into window
+RLAPI char **GetDroppedFiles(int windowID, int *count);           // Get dropped files names (memory should be freed)
+RLAPI void ClearDroppedFiles(int windowID);                       // Clear dropped files paths buffer (free memory)
 RLAPI long GetFileModTime(const char *fileName);                  // Get file modification time (last write time)
 
 // Compression/Encoding functionality
@@ -1102,11 +1108,11 @@ RLAPI int GetMouseX(void);                                    // Get mouse posit
 RLAPI int GetMouseY(void);                                    // Get mouse position Y
 RLAPI Vector2 GetMousePosition(void);                         // Get mouse position XY
 RLAPI Vector2 GetMouseDelta(void);                            // Get mouse delta between frames
-RLAPI void SetMousePosition(int x, int y);                    // Set mouse position XY
+RLAPI void SetMousePosition(int windowID, int x, int y);                    // Set mouse position XY
 RLAPI void SetMouseOffset(int offsetX, int offsetY);          // Set mouse offset
 RLAPI void SetMouseScale(float scaleX, float scaleY);         // Set mouse scaling
 RLAPI float GetMouseWheelMove(void);                          // Get mouse wheel movement Y
-RLAPI void SetMouseCursor(int cursor);                        // Set mouse cursor
+RLAPI void SetMouseCursor(int windowID, int cursor);                        // Set mouse cursor
 
 // Input-related functions: touch
 RLAPI int GetTouchX(void);                                    // Get touch position X for touch point 0 (relative to screen size)
@@ -1130,7 +1136,7 @@ RLAPI float GetGesturePinchAngle(void);                 // Get gesture pinch ang
 //------------------------------------------------------------------------------------
 // Camera System Functions (Module: rcamera)
 //------------------------------------------------------------------------------------
-RLAPI void SetCameraMode(Camera camera, int mode);      // Set camera mode (multiple camera modes available)
+RLAPI void SetCameraMode(Camera camera, int mode, int windowID);      // Set camera mode (multiple camera modes available)
 RLAPI void UpdateCamera(Camera *camera);                // Update camera position for selected mode
 
 RLAPI void SetCameraPanControl(int keyPan);             // Set camera pan key to combine with mouse movement (free camera)
@@ -1207,7 +1213,7 @@ RLAPI Image LoadImageRaw(const char *fileName, int width, int height, int format
 RLAPI Image LoadImageAnim(const char *fileName, int *frames);                                            // Load image sequence from file (frames appended to image.data)
 RLAPI Image LoadImageFromMemory(const char *fileType, const unsigned char *fileData, int dataSize);      // Load image from memory buffer, fileType refers to extension: i.e. '.png'
 RLAPI Image LoadImageFromTexture(Texture2D texture);                                                     // Load image from GPU texture data
-RLAPI Image LoadImageFromScreen(void);                                                                   // Load image from screen buffer and (screenshot)
+RLAPI Image LoadImageFromScreen(int windowID);                                                                   // Load image from screen buffer and (screenshot)
 RLAPI void UnloadImage(Image image);                                                                     // Unload image from CPU memory (RAM)
 RLAPI bool ExportImage(Image image, const char *fileName);                                               // Export image data to file, returns true on success
 RLAPI bool ExportImageAsCode(Image image, const char *fileName);                                         // Export image as code file defining an array of bytes, returns true on success
