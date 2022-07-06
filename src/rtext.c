@@ -824,6 +824,7 @@ void UnloadFont(Font font)
 // NOTE: Uses default font
 void DrawFPS(int posX, int posY)
 {
+#if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     Color color = LIME; // good fps
     int fps = GetFPS();
 
@@ -831,6 +832,9 @@ void DrawFPS(int posX, int posY)
     else if (fps < 15) color = RED;    // bad FPS
 
     DrawText(TextFormat("%2i FPS", GetFPS()), posX, posY, 20, color);
+#else
+    InvalidCodePath
+#endif
 }
 
 // Draw text (using default font)

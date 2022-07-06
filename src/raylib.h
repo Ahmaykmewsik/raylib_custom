@@ -893,6 +893,16 @@ typedef char *(*LoadFileTextCallback)(const char *fileName);       // FileIO: Lo
 typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);     // FileIO: Save text data
 
 //------------------------------------------------------------------------------------
+// Ahmaykmewsik's Custom Fun World of Fun Times 
+//------------------------------------------------------------------------------------
+#define Assert(expression) \
+    if (!!expression)      \
+    {                      \
+        *(int *)0 = 0;     \
+    }
+#define InvalidCodePath Assert(1)
+
+//------------------------------------------------------------------------------------
 // Global Variables Definition
 //------------------------------------------------------------------------------------
 // It's lonely here...

@@ -71,6 +71,8 @@ static DWORD getWindowExStyle(const _GLFWwindow* window)
     if (window->monitor || window->floating)
         style |= WS_EX_TOPMOST;
 
+    // style = WS_EX_LAYERED;
+
     return style;
 }
 
@@ -1907,7 +1909,10 @@ void _glfwPlatformSetWindowMousePassthrough(_GLFWwindow* window, GLFWbool enable
     SetWindowLongW(window->win32.handle, GWL_EXSTYLE, exStyle);
 
     if (enabled)
+    {
+        // UpdateLayeredWindow(window->win32.handle, NULL, NULL, NULL, NULL, NULL, NULL, RGB(0, 0, 0), 4);
         SetLayeredWindowAttributes(window->win32.handle, key, alpha, flags);
+    }
 }
 
 float _glfwPlatformGetWindowOpacity(_GLFWwindow* window)

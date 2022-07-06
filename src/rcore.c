@@ -327,12 +327,6 @@
 #define FLAG_TOGGLE(n, f) ((n) ^= (f))
 #define FLAG_CHECK(n, f) ((n) & (f))
 
-// Custom
-#define Assert(expression) \
-    if (!!expression)      \
-    {                      \
-        *(int *)0 = 0;     \
-    }
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -2006,9 +2000,11 @@ void BeginDrawing(unsigned int windowID)
     rlSetContext(windowID);
     glfwMakeContextCurrent(CORE.Window[CORE.currentWindow].handle);
 
+#if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     CORE.Time.current = GetTime();      // Number of elapsed seconds since InitTimer()
     CORE.Time.update = CORE.Time.current - CORE.Time.previous;
     CORE.Time.previous = CORE.Time.current;
+#endif
 
     rlLoadIdentity();                   // Reset current matrix (modelview)
     rlMultMatrixf(MatrixToFloat(CORE.Window[CORE.currentWindow].screenScale)); // Apply screen scaling
@@ -2117,6 +2113,8 @@ void EndDrawing(void)
         }
 
         PollInputEvents(); // Poll user events (before next frame update)
+
+        CORE.Time.frameCounter++;
     }
 #endif
 
@@ -2130,11 +2128,6 @@ void EndDrawing(void)
         PlayAutomationEvent(CORE.Time.frameCounter);
     }
 #endif
-
-    if (CORE.currentWindow == numContexts - 1)
-    {
-        CORE.Time.frameCounter++;
-    }
 }
 
 // Initialize 2D mode with custom camera (2D)
@@ -2695,10 +2688,14 @@ Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera)
 // Set target FPS (maximum)
 void SetTargetFPS(int fps)
 {
+#if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     if (fps < 1) CORE.Time.target = 0.0;
     else CORE.Time.target = 1.0/(double)fps;
 
     TRACELOG(LOG_INFO, "TIMER: Target time per frame: %02.03f milliseconds", (float)CORE.Time.target*1000);
+#else
+    InvalidCodePath
+#endif
 }
 
 // Get current FPS
@@ -2729,6 +2726,8 @@ int GetFPS(void)
     }
 
     fps = (int)roundf(1.0f/average);
+#else
+    InvalidCodePath
 #endif
 
     return fps;
@@ -2737,7 +2736,11 @@ int GetFPS(void)
 // Get time in seconds for last frame drawn (delta time)
 float GetFrameTime(void)
 {
+#if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     return (float)CORE.Time.frame;
+#else
+    InvalidCodePath
+#endif
 }
 
 // Get elapsed time measure in seconds since InitTimer()
@@ -4268,6 +4271,7 @@ static bool InitGraphicsDevice(int width, int height)
     }
 
     const bool allowInterlaced = CORE.Window[CORE.currentWindow].flags & FLAG_INTERLACED_HINT;
+    //NOTE(Ahmayk): This will probably break if custom frame control is on, not my platform not my problem
     const int fps = (CORE.Time.target > 0) ? (1.0/CORE.Time.target) : 60;
     // try to find an exact matching mode
     CORE.Window[CORE.currentWindow].modeIndex = FindExactConnectorMode(CORE.Window[CORE.currentWindow].connector, CORE.Window[CORE.currentWindow].screen.width, CORE.Window[CORE.currentWindow].screen.height, fps, allowInterlaced);
@@ -4722,7 +4726,9 @@ static void InitTimer(void)
     else TRACELOG(LOG_WARNING, "TIMER: Hi-resolution timer not available");
 #endif
 
+#if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     CORE.Time.previous = GetTime();     // Get time as double
+#endif
 }
 
 // Wait for some milliseconds (stop program execution)
@@ -5154,7 +5160,7 @@ int _GetWindowIDOfGlfwWindowHandleInternal(GLFWwindow *window)
         if (CORE.Window[i].handle == window)
             return i;
     }
-    Assert(1);
+    InvalidCodePath
     return 0;
 }
 
