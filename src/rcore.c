@@ -336,7 +336,7 @@ typedef struct {
     pthread_t threadId;             // Event reading thread id
     int fd;                         // File descriptor to the device it is assigned to
     int eventNum;                   // Number of 'event<N>' device
-    Rectangle absRange;             // Range of values for absolute pointing devices (touchscreens)
+    RayRectangle absRange;             // Range of values for absolute pointing devices (touchscreens)
     int touchSlot;                  // Hold the touch slot number of the currently being sent multitouch block
     bool isMouse;                   // True if device supports relative X Y movements
     bool isTouch;                   // True if device supports absolute X Y movements and has BTN_TOUCH
@@ -818,15 +818,15 @@ void InitWindow(int width, int height, const char *title)
     // if (CORE.currentWindow == 0)
     // {
         LoadFontDefault();
-        Rectangle rec = GetFontDefault().recs[95];
+        RayRectangle rec = GetFontDefault().recs[95];
         // NOTE: We setup a 1px padding on char rectangle to avoid pixel bleeding on MSAA filtering
-        SetShapesTexture(GetFontDefault().texture, (Rectangle){rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2});
+        SetShapesTexture(GetFontDefault().texture, (RayRectangle){rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2});
     // }
 #else
     // Set default texture and rectangle to be used for shapes drawing
     // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
     Texture2D texture = { rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
-    SetShapesTexture(texture, (Rectangle){ 0.0f, 0.0f, 1.0f, 1.0f });
+    SetShapesTexture(texture, (RayRectangle){ 0.0f, 0.0f, 1.0f, 1.0f });
 #endif
 #if defined(PLATFORM_DESKTOP)
     if ((CORE.Window[CORE.currentWindow].flags & FLAG_WINDOW_HIGHDPI) > 0)
@@ -5502,9 +5502,9 @@ static void AndroidCommandCallback(struct android_app *app, int32_t cmd)
                     // NOTE: External function (defined in module: text)
                     if (CORE.currentWindow == 0) {
                         LoadFontDefault();
-                        Rectangle rec = GetFontDefault().recs[95];
+                        RayRectangle rec = GetFontDefault().recs[95];
                         // NOTE: We setup a 1px padding on char rectangle to avoid pixel bleeding on MSAA filtering
-                        SetShapesTexture(GetFontDefault().texture, (Rectangle){rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2});
+                        SetShapesTexture(GetFontDefault().texture, (RayRectangle){rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2});
                     }
                 #endif
 
