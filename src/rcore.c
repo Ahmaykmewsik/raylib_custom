@@ -1918,7 +1918,7 @@ void SetClipboardText(const char *text)
 }
 
 // Show mouse cursor
-void ShowCursor(int windowID)
+void RayShowCursor(int windowID)
 {
 #if defined(PLATFORM_DESKTOP)
     glfwSetInputMode(CORE.Window[windowID].handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

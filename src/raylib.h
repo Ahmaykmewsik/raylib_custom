@@ -968,7 +968,7 @@ RLAPI void PollInputEvents(void);                                 // Register al
 RLAPI void WaitTime(float ms);                                    // Wait for some milliseconds (halt program execution)
 
 // Cursor-related functions
-RLAPI void ShowCursor(int windowID);                              // Shows cursor
+RLAPI void RayShowCursor(int windowID);                           // Shows cursor
 RLAPI void HideCursor(int windowID);                              // Hides cursor
 RLAPI bool IsCursorHidden();                                      // Check if cursor is not visible
 RLAPI void EnableCursor(int windowID);                            // Enables cursor (unlock cursor)
