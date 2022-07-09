@@ -4779,23 +4779,23 @@ void WaitTime(float ms)
 }
 
 // Swap back buffer with front buffer (screen drawing)
-void SwapScreenBuffer(void)
+void SwapScreenBuffer(int windowID)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
-    glfwSwapBuffers(CORE.Window[CORE.currentWindow].handle);
+    glfwSwapBuffers(CORE.Window[windowID].handle);
 #endif
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
-    eglSwapBuffers(CORE.Window[CORE.currentWindow].device, CORE.Window[CORE.currentWindow].surface);
+    eglSwapBuffers(CORE.Window[windowID].device, CORE.Window[windowID].surface);
 
 #if defined(PLATFORM_DRM)
-    if (!CORE.Window[CORE.currentWindow].gbmSurface || (-1 == CORE.Window[CORE.currentWindow].fd) || !CORE.Window[CORE.currentWindow].connector || !CORE.Window[CORE.currentWindow].crtc)
+    if (!CORE.Window[windowID].gbmSurface || (-1 == CORE.Window[windowID].fd) || !CORE.Window[windowID].connector || !CORE.Window[windowID].crtc)
     {
         TRACELOG(LOG_ERROR, "DISPLAY: DRM initialization failed to swap");
         abort();
     }
 
-    struct gbm_bo *bo = gbm_surface_lock_front_buffer(CORE.Window[CORE.currentWindow].gbmSurface);
+    struct gbm_bo *bo = gbm_surface_lock_front_buffer(CORE.Window[windowID].gbmSurface);
     if (!bo)
     {
         TRACELOG(LOG_ERROR, "DISPLAY: Failed GBM to lock front buffer");
@@ -4803,39 +4803,39 @@ void SwapScreenBuffer(void)
     }
 
     uint32_t fb = 0;
-    int result = drmModeAddFB(CORE.Window[CORE.currentWindow].fd, CORE.Window[CORE.currentWindow].connector->modes[CORE.Window[CORE.currentWindow].modeIndex].hdisplay,
-        CORE.Window[CORE.currentWindow].connector->modes[CORE.Window[CORE.currentWindow].modeIndex].vdisplay, 24, 32, gbm_bo_get_stride(bo), gbm_bo_get_handle(bo).u32, &fb);
+    int result = drmModeAddFB(CORE.Window[windowID].fd, CORE.Window[windowID].connector->modes[CORE.Window[windowID].modeIndex].hdisplay,
+        CORE.Window[windowID].connector->modes[CORE.Window[windowID].modeIndex].vdisplay, 24, 32, gbm_bo_get_stride(bo), gbm_bo_get_handle(bo).u32, &fb);
     if (0 != result)
     {
         TRACELOG(LOG_ERROR, "DISPLAY: drmModeAddFB() failed with result: %d", result);
         abort();
     }
 
-    result = drmModeSetCrtc(CORE.Window[CORE.currentWindow].fd, CORE.Window[CORE.currentWindow].crtc->crtc_id, fb, 0, 0,
-        &CORE.Window[CORE.currentWindow].connector->connector_id, 1, &CORE.Window[CORE.currentWindow].connector->modes[CORE.Window[CORE.currentWindow].modeIndex]);
+    result = drmModeSetCrtc(CORE.Window[windowID].fd, CORE.Window[windowID].crtc->crtc_id, fb, 0, 0,
+        &CORE.Window[windowID].connector->connector_id, 1, &CORE.Window[windowID].connector->modes[CORE.Window[windowID].modeIndex]);
     if (0 != result)
     {
         TRACELOG(LOG_ERROR, "DISPLAY: drmModeSetCrtc() failed with result: %d", result);
         abort();
     }
 
-    if (CORE.Window[CORE.currentWindow].prevFB)
+    if (CORE.Window[windowID].prevFB)
     {
-        result = drmModeRmFB(CORE.Window[CORE.currentWindow].fd, CORE.Window[CORE.currentWindow].prevFB);
+        result = drmModeRmFB(CORE.Window[windowID].fd, CORE.Window[windowID].prevFB);
         if (0 != result)
         {
             TRACELOG(LOG_ERROR, "DISPLAY: drmModeRmFB() failed with result: %d", result);
             abort();
         }
     }
-    CORE.Window[CORE.currentWindow].prevFB = fb;
+    CORE.Window[windowID].prevFB = fb;
 
-    if (CORE.Window[CORE.currentWindow].prevBO)
+    if (CORE.Window[windowID].prevBO)
     {
-        gbm_surface_release_buffer(CORE.Window[CORE.currentWindow].gbmSurface, CORE.Window[CORE.currentWindow].prevBO);
+        gbm_surface_release_buffer(CORE.Window[windowID].gbmSurface, CORE.Window[windowID].prevBO);
     }
 
-    CORE.Window[CORE.currentWindow].prevBO = bo;
+    CORE.Window[windowID].prevBO = bo;
 #endif  // PLATFORM_DRM
 #endif  // PLATFORM_ANDROID || PLATFORM_RPI || PLATFORM_DRM
 }

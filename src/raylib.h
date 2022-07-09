@@ -917,7 +917,7 @@ extern "C" {            // Prevents name mangling of functions
 
 // Window-related functions
 RLAPI void InitWindow(int width, int height, const char *title);  // Initialize window and OpenGL context
-RLAPI bool GameShouldClose(void);                               // Check if KEY_ESCAPE pressed or Close icon pressed
+RLAPI bool GameShouldClose(void);                                 // Check if KEY_ESCAPE pressed or Close icon pressed
 RLAPI void CloseGame(void);                                       // Close game and unload OpenGL context (Originally "CloseWindow()")
 RLAPI void CloseSingleWindow(int windowID);                       // Close window and unload OpenGL context
 RLAPI bool IsWindowReady(int windowID);                           // Check if window has been initialized successfully
@@ -963,7 +963,7 @@ RLAPI const char *GetClipboardText(void);                         // Get clipboa
 // NOTE: Those functions are intended for advance users that want full control over the frame processing
 // By default EndDrawing() does this job: draws everything + SwapScreenBuffer() + manage frame timming + PollInputEvents()
 // To avoid that behaviour and control frame processes manually, enable in config.h: SUPPORT_CUSTOM_FRAME_CONTROL
-RLAPI void SwapScreenBuffer(void);                                // Swap back buffer with front buffer (screen drawing)
+RLAPI void SwapScreenBuffer(int windowID);                        // Swap back buffer with front buffer (screen drawing)
 RLAPI void PollInputEvents(void);                                 // Register all input events
 RLAPI void WaitTime(float ms);                                    // Wait for some milliseconds (halt program execution)
 
