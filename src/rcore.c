@@ -2189,7 +2189,8 @@ void BeginMode3D(Camera3D camera)
     Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
     rlMultMatrixf(MatrixToFloat(matView));      // Multiply modelview matrix by view matrix (camera)
 
-    rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
+    //HACK: I don't want this on
+    // rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
 }
 
 // Ends 3D mode and returns to default 2D orthographic mode
@@ -2776,9 +2777,7 @@ void SetConfigFlags(int windowID, unsigned int flags)
 //For before window init only
 void RemoveConfigFlags(int windowID, unsigned int flags)
 {
-    //TODO: play with this some more
-    // flags = ~flags;
-    // CORE.Window[windowID].flags -= 0x00040000;
+    CORE.Window[windowID].flags &= ~flags;
 }
 
 // NOTE TRACELOG() function is located in [utils.h]

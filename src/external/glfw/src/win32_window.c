@@ -59,6 +59,8 @@ static DWORD getWindowStyle(const _GLFWwindow* window)
             style |= WS_POPUP;
     }
 
+    // if (!window->mousePassthrough)
+    //     style = WS_CHILD;
 
     return style;
 }
@@ -75,7 +77,7 @@ static DWORD getWindowExStyle(const _GLFWwindow* window)
     // style = WS_EX_LAYERED;
 
     if (window->mousePassthrough)
-        style = WS_EX_NOACTIVATE | WS_EX_TOPMOST;
+        style = WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
 
     return style;
 }
