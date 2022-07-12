@@ -56,7 +56,7 @@ typedef struct {
     int posLoc;
     int targetLoc;
     int colorLoc;
-} Light;
+} RayLight;
 
 // Light type
 typedef enum {
@@ -71,8 +71,8 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader);   // Create a light and get shader locations
-void UpdateLightValues(Shader shader, Light light);         // Send light properties to shader
+RayLight CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader);   // Create a light and get shader locations
+void UpdateLightValues(Shader shader, RayLight light);         // Send light properties to shader
 
 #ifdef __cplusplus
 }
@@ -116,11 +116,11 @@ static int lightsCount = 0;    // Current amount of created lights
 //----------------------------------------------------------------------------------
 
 // Create a light and get shader locations
-Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader)
+RayLight CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader)
 {
-    Light light = { 0 };
+    RayLight light = { 0 };
 
-    if (lightsCount < MAX_LIGHTS)
+    if (lightsCount < RAY_MAX_LIGHTS)
     {
         light.enabled = true;
         light.type = type;
@@ -160,7 +160,7 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
 
 // Send light properties to shader
 // NOTE: Light shader locations should be available 
-void UpdateLightValues(Shader shader, Light light)
+void UpdateLightValues(Shader shader, RayLight light)
 {
     // Send to shader light enabled state and type
     SetShaderValue(shader, light.enabledLoc, &light.enabled, SHADER_UNIFORM_INT);

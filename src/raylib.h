@@ -901,6 +901,13 @@ typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);     // F
         *(int *)0 = 0;     \
     }
 #define InvalidCodePath Assert(1)
+#define UnimplementedCodePath InvalidCodePath 
+#define InvalidDefaultCase \
+    default:               \
+    {                      \
+        InvalidCodePath;   \
+    }                      \
+    break;
 
 //------------------------------------------------------------------------------------
 // Global Variables Definition
@@ -982,6 +989,7 @@ RLAPI void EndDrawing(void);                                      // End canvas 
 RLAPI void BeginMode2D(Camera2D camera);                          // Begin 2D mode with custom camera (2D)
 RLAPI void EndMode2D(void);                                       // Ends 2D mode with custom camera
 RLAPI void BeginMode3D(Camera3D camera);                          // Begin 3D mode with custom camera (3D)
+RLAPI void BeginMode3DEx(Camera3D camera, Vector2 dimentionsToMatch, bool depthTest);   // [CUSTOM] Begin 3D mode with extra parameters (3D)
 RLAPI void EndMode3D(void);                                       // Ends 3D mode and returns to default 2D orthographic mode
 RLAPI void BeginTextureMode(RenderTexture2D target);              // Begin drawing to render texture
 RLAPI void EndTextureMode(void);                                  // Ends drawing to render texture

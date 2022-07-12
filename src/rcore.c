@@ -598,8 +598,12 @@ static bool eventsRecording = false;    // Record events
 //-----------------------------------------------------------------------------------
 
 //Custom globals
-static bool isDrawingDirectlyIntoWindow;                  // bool so that we can assert if we call our drawing code incorrectly
-static bool isDrawingIntoTexture;                         // bool so that we can assert if we call our drawing code incorrectly
+
+// bools so that we can assert if we call our drawing code incorrectly
+static bool isDrawingDirectlyIntoWindow;                  
+static bool isDrawingIntoTexture;              
+static bool isDrawing2D;
+static bool isDrawing3D;
 
 //----------------------------------------------------------------------------------
 // Other Modules Functions Declaration (required by core)
@@ -1991,10 +1995,11 @@ void ClearBackground(Color color)
 // Setup canvas (framebuffer) to start drawing
 void BeginDrawing(unsigned int windowID)
 {
-    // WARNING: Previously to BeginDrawing() other render textures drawing could happen,
-    // consequently the measure for update vs draw is not accurate (only the total frame time is accurate)
     Assert(isDrawingDirectlyIntoWindow);
     isDrawingDirectlyIntoWindow = true;
+
+    // WARNING: Previously to BeginDrawing() other render textures drawing could happen,
+    // consequently the measure for update vs draw is not accurate (only the total frame time is accurate)
 
     CORE.currentWindow = windowID;
     rlSetContext(windowID);
@@ -2133,6 +2138,10 @@ void EndDrawing(void)
 // Initialize 2D mode with custom camera (2D)
 void BeginMode2D(Camera2D camera)
 {
+    Assert(isDrawing2D);
+    Assert(isDrawing3D);
+    isDrawing2D = true;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlLoadIdentity();               // Reset current matrix (modelview)
@@ -2147,6 +2156,10 @@ void BeginMode2D(Camera2D camera)
 // Ends 2D mode with custom camera
 void EndMode2D(void)
 {
+    Assert(!isDrawing2D);
+    Assert(isDrawing3D);
+    isDrawing2D = false;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlLoadIdentity();               // Reset current matrix (modelview)
@@ -2156,6 +2169,10 @@ void EndMode2D(void)
 // Initializes 3D mode with custom camera (3D)
 void BeginMode3D(Camera3D camera)
 {
+    Assert(isDrawing3D);
+    Assert(isDrawing2D);
+    isDrawing3D = true;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlMatrixMode(RL_PROJECTION);    // Switch to projection matrix
@@ -2193,9 +2210,46 @@ void BeginMode3D(Camera3D camera)
     // rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
 }
 
+void BeginMode3DEx(Camera3D camera, Vector2 dimensionsToMatch, bool depthTest)
+{
+    Assert(isDrawing3D);
+    Assert(isDrawing2D);
+    isDrawing3D = true;
+
+    rlDrawRenderBatchActive(); // Update and draw internal render batch
+
+    rlMatrixMode(RL_PROJECTION); // Switch to projection matrix
+    rlPushMatrix();              // Save previous matrix, which contains the settings for the 2d ortho projection
+    rlLoadIdentity();            // Reset current matrix (projection)
+
+    float aspect = dimensionsToMatch.x / dimensionsToMatch.y;
+
+    // Setup perspective projection
+    // CUSTOM SETUP - ensures 1:1 ratio from 2D to 3D, and matching differnet sized resolutions to the same view
+    double top = 0.000005 * dimensionsToMatch.y;
+    double right = top * aspect;
+
+    rlFrustum(-right, right, -top, top, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+
+    rlMatrixMode(RL_MODELVIEW); // Switch back to modelview matrix
+    rlLoadIdentity();           // Reset current matrix (modelview)
+
+    // Setup Camera view
+    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+    rlMultMatrixf(MatrixToFloat(matView)); // Multiply modelview matrix by view matrix (camera)
+
+    if (depthTest)
+        rlEnableDepthTest(); // Enable DEPTH_TEST for 3D
+}
+
+
 // Ends 3D mode and returns to default 2D orthographic mode
 void EndMode3D(void)
 {
+    Assert(!isDrawing3D);
+    Assert(isDrawing2D);
+    isDrawing3D = false;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlMatrixMode(RL_PROJECTION);    // Switch to projection matrix

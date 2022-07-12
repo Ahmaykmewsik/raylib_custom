@@ -1789,7 +1789,7 @@ void rlSetBlendMode(int mode)
             case RL_BLEND_SUBTRACT_COLORS: glBlendFunc(GL_ONE, GL_ONE); glBlendEquation(GL_FUNC_SUBTRACT); break;
             case RL_BLEND_ALPHA_PREMUL: glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); glBlendEquation(GL_FUNC_ADD); break;
             case RL_BLEND_CUSTOM: glBlendFunc(RLGL[currentContext].State.glBlendSrcFactor, RLGL[currentContext].State.glBlendDstFactor); glBlendEquation(RLGL[currentContext].State.glBlendEquation); break;
-            default: break;
+            InvalidDefaultCase
         }
 
         RLGL[currentContext].State.currentBlendMode = mode;
