@@ -1089,6 +1089,21 @@ bool GameShouldClose(void)
 #endif
 }
 
+int GetCurrentContext()
+{
+    return CORE.currentWindow;
+}
+
+void SetContext(int windowID) 
+{
+    if (CORE.currentWindow != windowID)
+    {
+        CORE.currentWindow = windowID;
+        rlSetContext(windowID);
+        glfwMakeContextCurrent(CORE.Window[CORE.currentWindow].handle);
+    }
+}
+
 // Check if window has been initialized successfully
 bool IsWindowReady(int windowID)
 {
@@ -2001,9 +2016,7 @@ void BeginDrawing(unsigned int windowID)
     // WARNING: Previously to BeginDrawing() other render textures drawing could happen,
     // consequently the measure for update vs draw is not accurate (only the total frame time is accurate)
 
-    CORE.currentWindow = windowID;
-    rlSetContext(windowID);
-    glfwMakeContextCurrent(CORE.Window[CORE.currentWindow].handle);
+    SetContext(windowID);
 
 #if !defined(SUPPORT_CUSTOM_FRAME_CONTROL)
     CORE.Time.current = GetTime();      // Number of elapsed seconds since InitTimer()
@@ -2264,8 +2277,9 @@ void EndMode3D(void)
 }
 
 // Initializes render texture for drawing
-void BeginTextureMode(RenderTexture2D target)
+void BeginTextureMode(int windowID, RenderTexture2D target)
 {
+    // Assert(isDrawingDirectlyIntoWindow);
     Assert(isDrawingIntoTexture);
     isDrawingIntoTexture = true;
 
@@ -2295,8 +2309,9 @@ void BeginTextureMode(RenderTexture2D target)
 }
 
 // Ends drawing to render texture
-void EndTextureMode(void)
+void EndTextureMode(int windowID)
 {
+    // Assert(isDrawingDirectlyIntoWindow);
     Assert(!isDrawingIntoTexture);
     isDrawingIntoTexture = false;
 
@@ -4641,7 +4656,7 @@ static bool InitGraphicsDevice(int width, int height)
     // NOTE: It updated CORE.Window[CORE.currentWindow].render.width and CORE.Window[CORE.currentWindow].render.height
     SetupViewport(CORE.Window[CORE.currentWindow].currentFbo.width, CORE.Window[CORE.currentWindow].currentFbo.height);
 
-    ClearBackground(RAYWHITE);      // Default background color for raylib games :P
+    ClearBackground(PINK);      // Default background color for raylib games :P
 
 #if defined(PLATFORM_ANDROID)
     CORE.Window[CORE.currentWindow].ready = true;

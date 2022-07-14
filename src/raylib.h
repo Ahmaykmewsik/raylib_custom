@@ -339,6 +339,8 @@ typedef struct Mesh {
     // OpenGL identifiers
     unsigned int vaoId;     // OpenGL Vertex Array Object id
     unsigned int *vboId;    // OpenGL Vertex Buffer Objects id (default vertex data)
+
+    unsigned int windowID;  // [CUSTOM] the windowID context that this mesh was uploaded to    
 } Mesh;
 
 // Shader
@@ -927,6 +929,8 @@ RLAPI void InitWindow(int width, int height, const char *title);  // Initialize 
 RLAPI bool GameShouldClose(void);                                 // Check if KEY_ESCAPE pressed or Close icon pressed
 RLAPI void CloseGame(void);                                       // Close game and unload OpenGL context (Originally "CloseWindow()")
 RLAPI void CloseSingleWindow(int windowID);                       // Close window and unload OpenGL context
+RLAPI int GetCurrentContext(void);                                // [CUSTOM] Gets the current OpenGL context 
+RLAPI void SetContext(int windowID);                              // [CUSTOM] Switches to a different (shared) OpenGL context 
 RLAPI bool IsWindowReady(int windowID);                           // Check if window has been initialized successfully
 RLAPI bool IsWindowFullscreen(int windowID);                      // Check if window is currently fullscreen
 RLAPI bool IsWindowHidden(int windowID);                          // Check if window is currently hidden (only PLATFORM_DESKTOP)
@@ -991,8 +995,8 @@ RLAPI void EndMode2D(void);                                       // Ends 2D mod
 RLAPI void BeginMode3D(Camera3D camera);                          // Begin 3D mode with custom camera (3D)
 RLAPI void BeginMode3DEx(Camera3D camera, Vector2 dimentionsToMatch, bool depthTest);   // [CUSTOM] Begin 3D mode with extra parameters (3D)
 RLAPI void EndMode3D(void);                                       // Ends 3D mode and returns to default 2D orthographic mode
-RLAPI void BeginTextureMode(RenderTexture2D target);              // Begin drawing to render texture
-RLAPI void EndTextureMode(void);                                  // Ends drawing to render texture
+RLAPI void BeginTextureMode(int windowID, RenderTexture2D target);// Begin drawing to render texture
+RLAPI void EndTextureMode(int windowID);                          // Ends drawing to render texture
 RLAPI void BeginShaderMode(Shader shader);                        // Begin custom shader drawing
 RLAPI void EndShaderMode(void);                                   // End custom shader drawing (use default shader)
 RLAPI void BeginBlendMode(int mode);                              // Begin blending mode (alpha, additive, multiplied, subtract, custom)
@@ -1302,7 +1306,7 @@ RLAPI void ImageDrawTextEx(Image *dst, Font font, const char *text, Vector2 posi
 RLAPI Texture2D LoadTexture(const char *fileName);                                                       // Load texture from file into GPU memory (VRAM)
 RLAPI Texture2D LoadTextureFromImage(Image image);                                                       // Load texture from image data
 RLAPI TextureCubemap LoadTextureCubemap(Image image, int layout);                                        // Load cubemap from image, multiple image cubemap layouts supported
-RLAPI RenderTexture2D LoadRenderTexture(int width, int height);                                          // Load texture for rendering (framebuffer)
+RLAPI RenderTexture2D LoadRenderTexture(int windowID, int width, int height);                            // Load texture for rendering (framebuffer)
 RLAPI void UnloadTexture(Texture2D texture);                                                             // Unload texture from GPU memory (VRAM)
 RLAPI void UnloadRenderTexture(RenderTexture2D target);                                                  // Unload render texture from GPU memory (VRAM)
 RLAPI void UpdateTexture(Texture2D texture, const void *pixels);                                         // Update GPU texture with new data
@@ -1425,7 +1429,7 @@ RLAPI void DrawGrid(int slices, float spacing);                                 
 //------------------------------------------------------------------------------------
 
 // Model management functions
-RLAPI Model LoadModel(const char *fileName);                                                // Load model from files (meshes and materials)
+RLAPI Model LoadModel(int windowID, const char *fileName);                                  // Load model from files (meshes and materials)
 RLAPI Model LoadModelFromMesh(Mesh mesh);                                                   // Load model from generated mesh (default material)
 RLAPI void UnloadModel(Model model);                                                        // Unload model (including meshes) from memory (RAM and/or VRAM)
 RLAPI void UnloadModelKeepMeshes(Model model);                                              // Unload model (but not meshes) from memory (RAM and/or VRAM)
@@ -1442,7 +1446,7 @@ RLAPI void DrawBillboardRec(Camera camera, Texture2D texture, RayRectangle sourc
 RLAPI void DrawBillboardPro(Camera camera, Texture2D texture, RayRectangle source, Vector3 position, Vector3 up, Vector2 size, Vector2 origin, float rotation, Color tint); // Draw a billboard texture defined by source and rotation
 
 // Mesh management functions
-RLAPI void UploadMesh(Mesh *mesh, bool dynamic);                                            // Upload mesh vertex data in GPU and provide VAO/VBO ids
+RLAPI void UploadMesh(int windowID, Mesh *mesh, bool dynamic);                              // Upload mesh vertex data in GPU and provide VAO/VBO ids
 RLAPI void UpdateMeshBuffer(Mesh mesh, int index, void *data, int dataSize, int offset);    // Update mesh vertex data in GPU for a specific buffer index
 RLAPI void UnloadMesh(Mesh mesh);                                                           // Unload mesh data from CPU and GPU
 RLAPI void DrawMesh(Mesh mesh, Material material, Matrix transform);                        // Draw a 3d mesh with material and transform
@@ -1453,17 +1457,17 @@ RLAPI void GenMeshTangents(Mesh *mesh);                                         
 RLAPI void GenMeshBinormals(Mesh *mesh);                                                    // Compute mesh binormals
 
 // Mesh generation functions
-RLAPI Mesh GenMeshPoly(int sides, float radius);                                            // Generate polygonal mesh
-RLAPI Mesh GenMeshPlane(float width, float length, int resX, int resZ);                     // Generate plane mesh (with subdivisions)
-RLAPI Mesh GenMeshCube(float width, float height, float length);                            // Generate cuboid mesh
-RLAPI Mesh GenMeshSphere(float radius, int rings, int slices);                              // Generate sphere mesh (standard sphere)
-RLAPI Mesh GenMeshHemiSphere(float radius, int rings, int slices);                          // Generate half-sphere mesh (no bottom cap)
-RLAPI Mesh GenMeshCylinder(float radius, float height, int slices);                         // Generate cylinder mesh
-RLAPI Mesh GenMeshCone(float radius, float height, int slices);                             // Generate cone/pyramid mesh
-RLAPI Mesh GenMeshTorus(float radius, float size, int radSeg, int sides);                   // Generate torus mesh
-RLAPI Mesh GenMeshKnot(float radius, float size, int radSeg, int sides);                    // Generate trefoil knot mesh
-RLAPI Mesh GenMeshHeightmap(Image heightmap, Vector3 size);                                 // Generate heightmap mesh from image data
-RLAPI Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize);                               // Generate cubes-based map mesh from image data
+RLAPI Mesh GenMeshPoly(int windowID, int sides, float radius);                              // Generate polygonal mesh
+RLAPI Mesh GenMeshPlane(int windowID, float width, float length, int resX, int resZ);       // Generate plane mesh (with subdivisions)
+RLAPI Mesh GenMeshCube(int windowID, float width, float height, float length);              // Generate cuboid mesh
+RLAPI Mesh GenMeshSphere(int windowID, float radius, int rings, int slices);                // Generate sphere mesh (standard sphere)
+RLAPI Mesh GenMeshHemiSphere(int windowID, float radius, int rings, int slices);            // Generate half-sphere mesh (no bottom cap)
+RLAPI Mesh GenMeshCylinder(int windowID, float radius, float height, int slices);           // Generate cylinder mesh
+RLAPI Mesh GenMeshCone(int windowID, float radius, float height, int slices);               // Generate cone/pyramid mesh
+RLAPI Mesh GenMeshTorus(int windowID, float radius, float size, int radSeg, int sides);     // Generate torus mesh
+RLAPI Mesh GenMeshKnot(int windowID, float radius, float size, int radSeg, int sides);      // Generate trefoil knot mesh
+RLAPI Mesh GenMeshHeightmap(int windowID, Image heightmap, Vector3 size);                   // Generate heightmap mesh from image data
+RLAPI Mesh GenMeshCubicmap(int windowID, Image cubicmap, Vector3 cubeSize);                 // Generate cubes-based map mesh from image data
 
 // Material loading/unloading functions
 RLAPI Material *LoadMaterials(const char *fileName, int *materialCount);                    // Load materials from model file

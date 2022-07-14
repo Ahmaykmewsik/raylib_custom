@@ -2910,9 +2910,11 @@ TextureCubemap LoadTextureCubemap(Image image, int layout)
 
 // Load texture for rendering (framebuffer)
 // NOTE: Render texture is loaded by default with RGBA color attachment and depth RenderBuffer
-RenderTexture2D LoadRenderTexture(int width, int height)
+RenderTexture2D LoadRenderTexture(int windowID, int width, int height)
 {
     RenderTexture2D target = { 0 };
+
+    SetContext(windowID);
 
     target.id = rlLoadFramebuffer(width, height);   // Load an empty framebuffer
 

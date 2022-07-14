@@ -907,7 +907,7 @@ void DrawGrid(int slices, float spacing)
 }
 
 // Load model from files (mesh and material)
-Model LoadModel(const char *fileName)
+Model LoadModel(int windowID, const char *fileName)
 {
     Model model = { 0 };
 
@@ -933,7 +933,7 @@ Model LoadModel(const char *fileName)
         model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));
 #if defined(SUPPORT_MESH_GENERATION)
         TRACELOG(LOG_WARNING, "MESH: [%s] Failed to load mesh data, default to cube mesh", fileName);
-        model.meshes[0] = GenMeshCube(1.0f, 1.0f, 1.0f);
+        model.meshes[0] = GenMeshCube(windowID, 1.0f, 1.0f, 1.0f);
 #else
         TRACELOG(LOG_WARNING, "MESH: [%s] Failed to load mesh data", fileName);
 #endif
@@ -941,7 +941,7 @@ Model LoadModel(const char *fileName)
     else
     {
         // Upload vertex data to GPU (static mesh)
-        for (int i = 0; i < model.meshCount; i++) UploadMesh(&model.meshes[i], false);
+        for (int i = 0; i < model.meshCount; i++) UploadMesh(windowID, &model.meshes[i], false);
     }
 
     if (model.materialCount == 0)
@@ -1059,14 +1059,18 @@ BoundingBox GetModelBoundingBox(Model model)
 }
 
 // Upload vertex data into a VAO (if supported) and VBO
-void UploadMesh(Mesh *mesh, bool dynamic)
+void UploadMesh(int windowID, Mesh *mesh, bool dynamic)
 {
+    SetContext(windowID);
+
     if (mesh->vaoId > 0)
     {
         // Check if mesh has already been loaded in GPU
         TRACELOG(LOG_WARNING, "VAO: [ID %i] Trying to re-load an already loaded mesh", mesh->vaoId);
         return;
     }
+
+    mesh->windowID = windowID; 
 
     mesh->vboId = (unsigned int *)RL_CALLOC(MAX_MESH_VERTEX_BUFFERS, sizeof(unsigned int));
 
@@ -1178,6 +1182,9 @@ void UpdateMeshBuffer(Mesh mesh, int index, void *data, int dataSize, int offset
 // Draw a 3d mesh with material and transform
 void DrawMesh(Mesh mesh, Material material, Matrix transform)
 {
+    //Meshes MUST belong to the current context!
+    Assert(mesh.windowID != GetCurrentContext());
+    
 #if defined(GRAPHICS_API_OPENGL_11)
     #define GL_VERTEX_ARRAY         0x8074
     #define GL_NORMAL_ARRAY         0x8075
@@ -1946,7 +1953,7 @@ bool IsModelAnimationValid(Model model, ModelAnimation anim)
 
 #if defined(SUPPORT_MESH_GENERATION)
 // Generate polygonal mesh
-Mesh GenMeshPoly(int sides, float radius)
+Mesh GenMeshPoly(int windowID, int sides, float radius)
 {
     Mesh mesh = { 0 };
 
@@ -2009,13 +2016,13 @@ Mesh GenMeshPoly(int sides, float radius)
 
     // Upload vertex data to GPU (static mesh)
     // NOTE: mesh.vboId array is allocated inside UploadMesh()
-    UploadMesh(&mesh, false);
+    UploadMesh(windowID, &mesh, false);
 
     return mesh;
 }
 
 // Generate plane mesh (with subdivisions)
-Mesh GenMeshPlane(float width, float length, int resX, int resZ)
+Mesh GenMeshPlane(int windowID, float width, float length, int resX, int resZ)
 {
     Mesh mesh = { 0 };
 
@@ -2143,13 +2150,13 @@ Mesh GenMeshPlane(float width, float length, int resX, int resZ)
 
     // Upload vertex data to GPU (static mesh)
     //HACK - nope, it's dynamic! Because yeah!
-    UploadMesh(&mesh, true);
+    UploadMesh(windowID, &mesh, true);
 
     return mesh;
 }
 
 // Generated cuboid mesh
-Mesh GenMeshCube(float width, float height, float length)
+Mesh GenMeshCube(int windowID, float width, float height, float length)
 {
     Mesh mesh = { 0 };
 
@@ -2308,13 +2315,13 @@ par_shapes_mesh* par_shapes_create_icosahedron();       // 20 sides polyhedron
 #endif
 
     // Upload vertex data to GPU (static mesh)
-    UploadMesh(&mesh, false);
+    UploadMesh(windowID, &mesh, false);
 
     return mesh;
 }
 
 // Generate sphere mesh (standard sphere)
-Mesh GenMeshSphere(float radius, int rings, int slices)
+Mesh GenMeshSphere(int windowID, float radius, int rings, int slices)
 {
     Mesh mesh = { 0 };
 
@@ -2348,7 +2355,7 @@ Mesh GenMeshSphere(float radius, int rings, int slices)
         par_shapes_free_mesh(sphere);
 
         // Upload vertex data to GPU (static mesh)
-        UploadMesh(&mesh, false);
+        UploadMesh(windowID, &mesh, false);
     }
     else TRACELOG(LOG_WARNING, "MESH: Failed to generate mesh: sphere");
 
@@ -2356,7 +2363,7 @@ Mesh GenMeshSphere(float radius, int rings, int slices)
 }
 
 // Generate hemi-sphere mesh (half sphere, no bottom cap)
-Mesh GenMeshHemiSphere(float radius, int rings, int slices)
+Mesh GenMeshHemiSphere(int windowID, float radius, int rings, int slices)
 {
     Mesh mesh = { 0 };
 
@@ -2392,7 +2399,7 @@ Mesh GenMeshHemiSphere(float radius, int rings, int slices)
         par_shapes_free_mesh(sphere);
 
         // Upload vertex data to GPU (static mesh)
-        UploadMesh(&mesh, false);
+        UploadMesh(windowID, &mesh, false);
     }
     else TRACELOG(LOG_WARNING, "MESH: Failed to generate mesh: hemisphere");
 
@@ -2400,7 +2407,7 @@ Mesh GenMeshHemiSphere(float radius, int rings, int slices)
 }
 
 // Generate cylinder mesh
-Mesh GenMeshCylinder(float radius, float height, int slices)
+Mesh GenMeshCylinder(int windowID, float radius, float height, int slices)
 {
     Mesh mesh = { 0 };
 
@@ -2455,7 +2462,7 @@ Mesh GenMeshCylinder(float radius, float height, int slices)
         par_shapes_free_mesh(cylinder);
 
         // Upload vertex data to GPU (static mesh)
-        UploadMesh(&mesh, false);
+        UploadMesh(windowID, &mesh, false);
     }
     else TRACELOG(LOG_WARNING, "MESH: Failed to generate mesh: cylinder");
 
@@ -2463,7 +2470,7 @@ Mesh GenMeshCylinder(float radius, float height, int slices)
 }
 
 // Generate cone/pyramid mesh
-Mesh GenMeshCone(float radius, float height, int slices)
+Mesh GenMeshCone(int windowID, float radius, float height, int slices)
 {
     Mesh mesh = { 0 };
 
@@ -2510,7 +2517,7 @@ Mesh GenMeshCone(float radius, float height, int slices)
         par_shapes_free_mesh(cone);
 
         // Upload vertex data to GPU (static mesh)
-        UploadMesh(&mesh, false);
+        UploadMesh(windowID, &mesh, false);
     }
     else TRACELOG(LOG_WARNING, "MESH: Failed to generate mesh: cone");
 
@@ -2518,7 +2525,7 @@ Mesh GenMeshCone(float radius, float height, int slices)
 }
 
 // Generate torus mesh
-Mesh GenMeshTorus(float radius, float size, int radSeg, int sides)
+Mesh GenMeshTorus(int windowID, float radius, float size, int radSeg, int sides)
 {
     Mesh mesh = { 0 };
 
@@ -2556,7 +2563,7 @@ Mesh GenMeshTorus(float radius, float size, int radSeg, int sides)
         par_shapes_free_mesh(torus);
 
         // Upload vertex data to GPU (static mesh)
-        UploadMesh(&mesh, false);
+        UploadMesh(windowID, &mesh, false);
     }
     else TRACELOG(LOG_WARNING, "MESH: Failed to generate mesh: torus");
 
@@ -2564,7 +2571,7 @@ Mesh GenMeshTorus(float radius, float size, int radSeg, int sides)
 }
 
 // Generate trefoil knot mesh
-Mesh GenMeshKnot(float radius, float size, int radSeg, int sides)
+Mesh GenMeshKnot(int windowID, float radius, float size, int radSeg, int sides)
 {
     Mesh mesh = { 0 };
 
@@ -2600,7 +2607,7 @@ Mesh GenMeshKnot(float radius, float size, int radSeg, int sides)
         par_shapes_free_mesh(knot);
 
         // Upload vertex data to GPU (static mesh)
-        UploadMesh(&mesh, false);
+        UploadMesh(windowID, &mesh, false);
     }
     else TRACELOG(LOG_WARNING, "MESH: Failed to generate mesh: knot");
 
@@ -2609,7 +2616,7 @@ Mesh GenMeshKnot(float radius, float size, int radSeg, int sides)
 
 // Generate a mesh from heightmap
 // NOTE: Vertex data is uploaded to GPU
-Mesh GenMeshHeightmap(Image heightmap, Vector3 size)
+Mesh GenMeshHeightmap(int windowID, Image heightmap, Vector3 size)
 {
     #define GRAY_VALUE(c) ((c.r+c.g+c.b)/3)
 
@@ -2737,14 +2744,14 @@ Mesh GenMeshHeightmap(Image heightmap, Vector3 size)
     UnloadImageColors(pixels);  // Unload pixels color data
 
     // Upload vertex data to GPU (static mesh)
-    UploadMesh(&mesh, false);
+    UploadMesh(windowID, &mesh, false);
 
     return mesh;
 }
 
 // Generate a cubes mesh from pixel data
 // NOTE: Vertex data is uploaded to GPU
-Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
+Mesh GenMeshCubicmap(int windowID, Image cubicmap, Vector3 cubeSize)
 {
     #define COLOR_EQUAL(col1, col2) ((col1.r == col2.r)&&(col1.g == col2.g)&&(col1.b == col2.b)&&(col1.a == col2.a))
 
@@ -3088,7 +3095,7 @@ Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
     UnloadImageColors(pixels);   // Unload pixels color data
 
     // Upload vertex data to GPU (static mesh)
-    UploadMesh(&mesh, false);
+    UploadMesh(windowID, &mesh, false);
 
     return mesh;
 }
