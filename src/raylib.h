@@ -925,12 +925,12 @@ extern "C" {            // Prevents name mangling of functions
 #endif
 
 // Window-related functions
-RLAPI void InitWindow(int width, int height, const char *title);  // Initialize window and OpenGL context
+RLAPI void InitWindow(int windowID, int width, int height, const char *title);  // Initialize window and OpenGL context
 RLAPI bool GameShouldClose(void);                                 // Check if KEY_ESCAPE pressed or Close icon pressed
 RLAPI void CloseGame(void);                                       // Close game and unload OpenGL context (Originally "CloseWindow()")
 RLAPI void CloseSingleWindow(int windowID);                       // Close window and unload OpenGL context
 RLAPI int GetCurrentContext(void);                                // [CUSTOM] Gets the current OpenGL context 
-RLAPI void SetContext(int windowID);                              // [CUSTOM] Switches to a different (shared) OpenGL context 
+RLAPI void SetContext(int contextID);                             // [CUSTOM] Switches to a different (shared) OpenGL context 
 RLAPI bool IsWindowReady(int windowID);                           // Check if window has been initialized successfully
 RLAPI bool IsWindowFullscreen(int windowID);                      // Check if window is currently fullscreen
 RLAPI bool IsWindowHidden(int windowID);                          // Check if window is currently hidden (only PLATFORM_DESKTOP)
@@ -967,8 +967,8 @@ RLAPI int GetMonitorRefreshRate(int monitor);                     // Get specifi
 RLAPI Vector2 GetWindowPosition(unsigned int windowID);           // Get window position XY on monitor
 RLAPI Vector2 GetWindowScaleDPI(int windowID);                    // Get window scale DPI factor
 RLAPI const char *GetMonitorName(int monitor);                    // Get the human-readable, UTF-8 encoded name of the primary monitor
-RLAPI void SetClipboardText(const char *text);                    // Set clipboard text content
-RLAPI const char *GetClipboardText(void);                         // Get clipboard text content
+RLAPI void SetClipboardText(int windowID, const char *text);                    // Set clipboard text content
+RLAPI const char *GetClipboardText(int windowID);                         // Get clipboard text content
 
 // Custom frame control functions
 // NOTE: Those functions are intended for advance users that want full control over the frame processing
@@ -989,12 +989,12 @@ RLAPI bool IsCursorOnScreen(int windowID);                        // Check if cu
 // Drawing-related functions
 RLAPI void ClearBackground(Color color);                          // Set background color (framebuffer clear color)
 RLAPI void BeginDrawing(unsigned int windowID);                   // Setup canvas (framebuffer) to start drawing
-RLAPI void EndDrawing(void);                                      // End canvas drawing and swap buffers (double buffering)
-RLAPI void BeginMode2D(Camera2D camera);                          // Begin 2D mode with custom camera (2D)
-RLAPI void EndMode2D(void);                                       // Ends 2D mode with custom camera
-RLAPI void BeginMode3D(Camera3D camera);                          // Begin 3D mode with custom camera (3D)
-RLAPI void BeginMode3DEx(Camera3D camera, Vector2 dimentionsToMatch, bool depthTest);   // [CUSTOM] Begin 3D mode with extra parameters (3D)
-RLAPI void EndMode3D(void);                                       // Ends 3D mode and returns to default 2D orthographic mode
+RLAPI void EndDrawing(int windowID);                              // End canvas drawing and swap buffers (double buffering)
+RLAPI void BeginMode2D(int windowID, Camera2D camera);            // Begin 2D mode with custom camera (2D)
+RLAPI void EndMode2D(int windowID);                               // Ends 2D mode with custom camera
+RLAPI void BeginMode3D(int windowID, Camera3D camera);            // Begin 3D mode with custom camera (3D)
+RLAPI void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimentionsToMatch, bool depthTest);   // [CUSTOM] Begin 3D mode with extra parameters (3D)
+RLAPI void EndMode3D(int windowID);                               // Ends 3D mode and returns to default 2D orthographic mode
 RLAPI void BeginTextureMode(int windowID, RenderTexture2D target);// Begin drawing to render texture
 RLAPI void EndTextureMode(int windowID);                          // Ends drawing to render texture
 RLAPI void BeginShaderMode(Shader shader);                        // Begin custom shader drawing
@@ -1306,7 +1306,7 @@ RLAPI void ImageDrawTextEx(Image *dst, Font font, const char *text, Vector2 posi
 RLAPI Texture2D LoadTexture(const char *fileName);                                                       // Load texture from file into GPU memory (VRAM)
 RLAPI Texture2D LoadTextureFromImage(Image image);                                                       // Load texture from image data
 RLAPI TextureCubemap LoadTextureCubemap(Image image, int layout);                                        // Load cubemap from image, multiple image cubemap layouts supported
-RLAPI RenderTexture2D LoadRenderTexture(int windowID, int width, int height);                            // Load texture for rendering (framebuffer)
+RLAPI RenderTexture2D LoadRenderTexture(int width, int height);                                          // Load texture for rendering (framebuffer)
 RLAPI void UnloadTexture(Texture2D texture);                                                             // Unload texture from GPU memory (VRAM)
 RLAPI void UnloadRenderTexture(RenderTexture2D target);                                                  // Unload render texture from GPU memory (VRAM)
 RLAPI void UpdateTexture(Texture2D texture, const void *pixels);                                         // Update GPU texture with new data
