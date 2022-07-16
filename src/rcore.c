@@ -2218,7 +2218,7 @@ void BeginMode3D(int windowID, Camera3D camera)
     // rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
 }
 
-void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimensionsToMatch, bool depthTest)
+void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimensionsToMatch, Vector2 viewOffset, bool depthTest)
 {
     Assert(isDrawing3D);
     Assert(isDrawing2D);
@@ -2237,7 +2237,10 @@ void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimensionsToMatch, boo
     double top = 0.000005 * dimensionsToMatch.y;
     double right = top * aspect;
 
-    rlFrustum(-right, right, -top, top, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+    double offsetX = Lerp(0, 0.01, viewOffset.x);
+    double offsetY = Lerp(0, 0.01, viewOffset.y);
+
+    rlFrustum(-right + offsetX, right + offsetX, -top + offsetY, top + offsetY, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
 
     rlMatrixMode(RL_MODELVIEW); // Switch back to modelview matrix
     rlLoadIdentity();           // Reset current matrix (modelview)
@@ -5066,7 +5069,8 @@ void PollInputEvents()
 #if defined(SUPPORT_EVENTS_WAITING)
     glfwWaitEvents();
 #else
-    glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
+    //No
+    // glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
 #endif
 #endif  // PLATFORM_DESKTOP
 
