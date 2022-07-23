@@ -2238,7 +2238,7 @@ void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimensionsToMatch, Vec
     double right = top * aspect;
 
     double offsetX = Lerp(0, 0.01, viewOffset.x);
-    double offsetY = Lerp(0, 0.01, viewOffset.y);
+    double offsetY = Lerp(0, 0.01, -viewOffset.y);
 
     rlFrustum(-right + offsetX, right + offsetX, -top + offsetY, top + offsetY, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
 

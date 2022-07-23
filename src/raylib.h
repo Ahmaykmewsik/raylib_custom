@@ -293,7 +293,7 @@ typedef struct Font {
     int glyphCount;         // Number of glyph characters
     int glyphPadding;       // Padding around the glyph characters
     Texture2D texture;      // Texture atlas containing the glyphs
-    RayRectangle *recs;        // Rectangles in texture for the glyphs
+    RayRectangle *recs;     // Rectangles in texture for the glyphs
     GlyphInfo *glyphs;      // Glyphs info data
 } Font;
 

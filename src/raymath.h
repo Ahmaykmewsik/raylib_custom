@@ -1404,6 +1404,15 @@ RMAPI float16 MatrixToFloatV(Matrix mat)
     return result;
 }
 
+//Custom matrix functions
+RMAPI bool MatrixIsNull(Matrix mat)
+{
+    return !(mat.m0 || mat.m1 || mat.m2 || mat.m3 ||
+             mat.m4 || mat.m5 || mat.m6 || mat.m7 ||
+             mat.m8 || mat.m9 || mat.m10 || mat.m11 ||
+             mat.m12 || mat.m13 || mat.m14 || mat.m15);
+}
+
 //----------------------------------------------------------------------------------
 // Module Functions Definition - Quaternion math
 //----------------------------------------------------------------------------------
