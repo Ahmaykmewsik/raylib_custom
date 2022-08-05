@@ -1092,7 +1092,7 @@ void ImageToPOT(Image *image, Color fill)
 // Create an image from text (default font)
 Image ImageText(const char *text, int fontSize, Color color)
 {
-    int defaultFontSize = 10;   // Default Font chars height in pixel
+    int defaultFontSize = 10;   // Default RayFont chars height in pixel
     if (fontSize < defaultFontSize) fontSize = defaultFontSize;
     int spacing = fontSize/defaultFontSize;
 
@@ -1102,7 +1102,7 @@ Image ImageText(const char *text, int fontSize, Color color)
 }
 
 // Create an image from text (custom sprite font)
-Image ImageTextEx(Font font, const char *text, float fontSize, float spacing, Color tint)
+Image ImageTextEx(RayFont font, const char *text, float fontSize, float spacing, Color tint)
 {
     int size = (int)strlen(text);   // Get size in bytes of text
 
@@ -2775,7 +2775,7 @@ void ImageDrawText(Image *dst, const char *text, int posX, int posY, int fontSiz
 }
 
 // Draw text (custom sprite font) within an image (destination)
-void ImageDrawTextEx(Image *dst, Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
+void ImageDrawTextEx(Image *dst, RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
 {
     Image imText = ImageTextEx(font, text, fontSize, spacing, tint);
 

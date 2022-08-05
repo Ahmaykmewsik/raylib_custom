@@ -288,14 +288,14 @@ typedef struct GlyphInfo {
 } GlyphInfo;
 
 // Font, font texture and GlyphInfo array data
-typedef struct Font {
+typedef struct RayFont {
     int baseSize;           // Base size (default chars height)
     int glyphCount;         // Number of glyph characters
     int glyphPadding;       // Padding around the glyph characters
     Texture2D texture;      // Texture atlas containing the glyphs
     RayRectangle *recs;     // Rectangles in texture for the glyphs
     GlyphInfo *glyphs;      // Glyphs info data
-} Font;
+} RayFont;
 
 // Camera, defines position/orientation in 3d space
 typedef struct Camera3D {
@@ -1254,7 +1254,7 @@ RLAPI Image GenImageCellular(int width, int height, int tileSize);              
 RLAPI Image ImageCopy(Image image);                                                                      // Create an image duplicate (useful for transformations)
 RLAPI Image ImageFromImage(Image image, RayRectangle rec);                                                  // Create an image from another image piece
 RLAPI Image ImageText(const char *text, int fontSize, Color color);                                      // Create an image from text (default font)
-RLAPI Image ImageTextEx(Font font, const char *text, float fontSize, float spacing, Color tint);         // Create an image from text (custom sprite font)
+RLAPI Image ImageTextEx(RayFont font, const char *text, float fontSize, float spacing, Color tint);         // Create an image from text (custom sprite font)
 RLAPI void ImageFormat(Image *image, int newFormat);                                                     // Convert image data to desired format
 RLAPI void ImageToPOT(Image *image, Color fill);                                                         // Convert image to POT (power-of-two)
 RLAPI void ImageCrop(Image *image, RayRectangle crop);                                                      // Crop an image to a defined rectangle
@@ -1299,7 +1299,7 @@ RLAPI void ImageDrawRectangleRec(Image *dst, RayRectangle rec, Color color);    
 RLAPI void ImageDrawRectangleLines(Image *dst, RayRectangle rec, int thick, Color color);                   // Draw rectangle lines within an image
 RLAPI void ImageDraw(Image *dst, Image src, RayRectangle srcRec, RayRectangle dstRec, Color tint);             // Draw a source image within a destination image (tint applied to source)
 RLAPI void ImageDrawText(Image *dst, const char *text, int posX, int posY, int fontSize, Color color);   // Draw text (using default font) within an image (destination)
-RLAPI void ImageDrawTextEx(Image *dst, Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint); // Draw text (custom sprite font) within an image (destination)
+RLAPI void ImageDrawTextEx(Image *dst, RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint); // Draw text (custom sprite font) within an image (destination)
 
 // Texture loading functions
 // NOTE: These functions require GPU access
@@ -1347,29 +1347,29 @@ RLAPI int GetPixelDataSize(int width, int height, int format);              // G
 //------------------------------------------------------------------------------------
 
 // Font loading/unloading functions
-RLAPI Font GetFontDefault(void);                                                            // Get the default Font
-RLAPI Font LoadFont(const char *fileName);                                                  // Load font from file into GPU memory (VRAM)
-RLAPI Font LoadFontEx(const char *fileName, int fontSize, int *fontChars, int glyphCount);  // Load font from file with extended parameters
-RLAPI Font LoadFontFromImage(Image image, Color key, int firstChar);                        // Load font from Image (XNA style)
-RLAPI Font LoadFontFromMemory(const char *fileType, const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount); // Load font from memory buffer, fileType refers to extension: i.e. '.ttf'
+RLAPI RayFont GetFontDefault(void);                                                            // Get the default Font
+RLAPI RayFont LoadFont(const char *fileName);                                                  // Load font from file into GPU memory (VRAM)
+RLAPI RayFont LoadFontEx(const char *fileName, int fontSize, int *fontChars, int glyphCount);  // Load font from file with extended parameters
+RLAPI RayFont LoadFontFromImage(Image image, Color key, int firstChar);                        // Load font from Image (XNA style)
+RLAPI RayFont LoadFontFromMemory(const char *fileType, const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount); // Load font from memory buffer, fileType refers to extension: i.e. '.ttf'
 RLAPI GlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount, int type);      // Load font data for further use
 RLAPI Image GenImageFontAtlas(const GlyphInfo *chars, RayRectangle **recs, int glyphCount, int fontSize, int padding, int packMethod);      // Generate image font atlas using chars info
 RLAPI void UnloadFontData(GlyphInfo *chars, int glyphCount);                                 // Unload font chars info data (RAM)
-RLAPI void UnloadFont(Font font);                                                           // Unload Font from GPU memory (VRAM)
+RLAPI void UnloadFont(RayFont font);                                                           // Unload Font from GPU memory (VRAM)
 
 // Text drawing functions
 RLAPI void DrawFPS(int posX, int posY);                                                     // Draw current FPS
 RLAPI void DrawText(const char *text, int posX, int posY, int fontSize, Color color);       // Draw text (using default font)
-RLAPI void DrawTextEx(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);    // Draw text using font and additional parameters
-RLAPI void DrawTextPro(Font font, const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint); // Draw text using Font and pro parameters (rotation)
-RLAPI void DrawTextCodepoint(Font font, int codepoint, Vector2 position, float fontSize, Color tint);   // Draw one character (codepoint)
+RLAPI void DrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);    // Draw text using font and additional parameters
+RLAPI void DrawTextPro(RayFont font, const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint); // Draw text using Font and pro parameters (rotation)
+RLAPI void DrawTextCodepoint(RayFont font, int codepoint, Vector2 position, float fontSize, Color tint);   // Draw one character (codepoint)
 
 // Text font info functions
 RLAPI int MeasureText(const char *text, int fontSize);                                      // Measure string width for default font
-RLAPI Vector2 MeasureTextEx(Font font, const char *text, float fontSize, float spacing);    // Measure string size for Font
-RLAPI int GetGlyphIndex(Font font, int codepoint);                                          // Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found
-RLAPI GlyphInfo GetGlyphInfo(Font font, int codepoint);                                     // Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
-RLAPI RayRectangle GetGlyphAtlasRec(Font font, int codepoint);                                 // Get glyph rectangle in font atlas for a codepoint (unicode character), fallback to '?' if not found
+RLAPI Vector2 MeasureTextEx(RayFont font, const char *text, float fontSize, float spacing);    // Measure string size for Font
+RLAPI int GetGlyphIndex(RayFont font, int codepoint);                                          // Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found
+RLAPI GlyphInfo GetGlyphInfo(RayFont font, int codepoint);                                     // Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
+RLAPI RayRectangle GetGlyphAtlasRec(RayFont font, int codepoint);                                 // Get glyph rectangle in font atlas for a codepoint (unicode character), fallback to '?' if not found
 
 // Text codepoints management functions (unicode characters)
 RLAPI int *LoadCodepoints(const char *text, int *count);              // Load all codepoints from a UTF-8 text string, codepoints count returned by parameter

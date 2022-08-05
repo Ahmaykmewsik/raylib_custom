@@ -477,8 +477,8 @@ RAYGUIAPI void GuiSetState(int state);                                  // Set g
 RAYGUIAPI int GuiGetState(void);                                        // Get gui state (global state)
 
 // Font set/get functions
-RAYGUIAPI void GuiSetFont(Font font);                                   // Set gui custom font (global state)
-RAYGUIAPI Font GuiGetFont(void);                                        // Get gui custom font (global state)
+RAYGUIAPI void GuiSetFont(RayFont font);                                   // Set gui custom font (global state)
+RAYGUIAPI RayFont GuiGetFont(void);                                        // Get gui custom font (global state)
 
 // Style set/get functions
 RAYGUIAPI void GuiSetStyle(int control, int property, int value);       // Set one style property
