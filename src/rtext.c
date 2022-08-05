@@ -882,8 +882,9 @@ void DrawTextEx(Font font, const char *text, Vector2 position, float fontSize, f
         if (codepoint == '\n')
         {
             // NOTE: Fixed line spacing of 1.5 line-height
-            // TODO: Support custom line spacing defined by user
-            textOffsetY += (int)((font.baseSize + font.baseSize/2)*scaleFactor);
+            // CUSTOM ADJUSTMENT: Changed to line-height of 1.0
+            // TODO: Support custom line spacing 
+            textOffsetY += (int)((font.baseSize)*scaleFactor);
             textOffsetX = 0.0f;
         }
         else
@@ -996,7 +997,8 @@ Vector2 MeasureTextEx(Font font, const char *text, float fontSize, float spacing
             if (tempTextWidth < textWidth) tempTextWidth = textWidth;
             byteCounter = 0;
             textWidth = 0;
-            textHeight += ((float)font.baseSize*1.5f); // NOTE: Fixed line spacing of 1.5 lines
+            textHeight += ((float)font.baseSize); // NOTE: Fixed line spacing of 1.5 lines
+                                                  // CUSTOM HACK: Nope, just 1
         }
 
         if (tempByteCounter < byteCounter) tempByteCounter = byteCounter;
