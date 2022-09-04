@@ -5070,7 +5070,7 @@ void PollInputEvents()
     glfwWaitEvents();
 #else
     //No
-    // glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
+    glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
 #endif
 #endif  // PLATFORM_DESKTOP
 
