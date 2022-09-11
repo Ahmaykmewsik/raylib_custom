@@ -289,7 +289,9 @@ void UpdateCamera(Camera *camera)
     // Mouse movement detection
     Vector2 mousePositionDelta = { 0.0f, 0.0f };
     //NOTE: only does fancy stuff with the position from the first window 
-    Vector2 mousePosition = GetMousePosition(0);
+
+    //[CUSTOM] Mouse position is handled externaly from raylib
+    Vector2 mousePosition = {}; 
     float mouseWheelMove = GetMouseWheelMove();
 
     // Keys input detection

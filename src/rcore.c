@@ -1987,6 +1987,9 @@ void DisableCursor(int windowID)
 // Check if cursor is on the current screen.
 bool IsCursorOnScreen(int windowID)
 {
+    //[CUSTOM] Mouse position must be handled externally in platform layer
+    Assert(1);
+
     for (int i = 0; i < CORE.numWindows; i++)
     {
         if (CORE.Window[i].contextIndex == windowID && CORE.Window[i].mouseOnThisWindow)
@@ -3721,6 +3724,8 @@ bool IsMouseButtonUp(int button)
 // Get mouse position X
 int GetMouseX(int windowID)
 {
+    //[CUSTOM] Mouse position must be handled externally in platform layer
+    Assert(1);
 #if defined(PLATFORM_ANDROID)
     return (int)CORE.Input.Touch.position[0].x;
 #else
@@ -3731,6 +3736,8 @@ int GetMouseX(int windowID)
 // Get mouse position Y
 int GetMouseY(int windowID)
 {
+    //[CUSTOM] Mouse position must be handled externally in platform layer
+    Assert(1);
 #if defined(PLATFORM_ANDROID)
     return (int)CORE.Input.Touch.position[0].y;
 #else
@@ -3741,6 +3748,8 @@ int GetMouseY(int windowID)
 // Get mouse position XY
 Vector2 GetMousePosition(int windowID)
 {
+    //[CUSTOM] Mouse position must be handled externally in platform layer
+    Assert(1);
     Vector2 position = { 0 };
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB)
@@ -3778,6 +3787,8 @@ void SetMousePosition(int windowID, int x, int y)
 // NOTE: Useful when rendering to different size targets
 void SetMouseOffset(int offsetX, int offsetY)
 {
+    //[CUSTOM] Mouse position must be handled externally in platform layer
+    Assert(1);
     CORE.Input.Mouse.offset = (Vector2){ (float)offsetX, (float)offsetY };
 }
 
@@ -3785,6 +3796,8 @@ void SetMouseOffset(int offsetX, int offsetY)
 // NOTE: Useful when rendering to different size targets
 void SetMouseScale(float scaleX, float scaleY)
 {
+    //[CUSTOM] Mouse must be handled externally in platform layer
+    Assert(1);
     CORE.Input.Mouse.scale = (Vector2){ scaleX, scaleY };
 }
 
@@ -3805,6 +3818,8 @@ float GetMouseWheelMove(void)
 // NOTE: This is a no-op on platforms other than PLATFORM_DESKTOP
 void SetMouseCursor(int windowID, int cursor)
 {
+    //[CUSTOM] Mouse must be handled externally in platform layer
+    Assert(1);
 #if defined(PLATFORM_DESKTOP)
     CORE.Input.Mouse.cursor = cursor;
     if (cursor == MOUSE_CURSOR_DEFAULT) glfwSetCursor(CORE.Window[windowID].handle, NULL);
@@ -3991,7 +4006,7 @@ static bool InitGraphicsDevice(int windowID, int width, int height)
     else glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);  // Opaque framebuffer
 
     if ((CORE.Window[windowID].flags & FLAG_WINDOW_MOUSE_PASSTHROUGH) > 0) glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);     // Mouse passthrough 
-    else glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);  // Opaque framebuffer
+    else glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE); 
 
     if ((CORE.Window[windowID].flags & FLAG_WINDOW_HIGHDPI) > 0)
     {
@@ -5070,7 +5085,7 @@ void PollInputEvents()
     glfwWaitEvents();
 #else
     //No
-    glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
+    // glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
 #endif
 #endif  // PLATFORM_DESKTOP
 
@@ -5445,7 +5460,8 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
     gestureEvent.pointCount = 1;
 
     // Register touch points position, only one point registered
-    gestureEvent.position[0] = GetMousePosition(windowID);
+    // [CUSTOM] Mouse position is handled externaly in platform layer
+    // gestureEvent.position[0] = GetMousePosition(windowID);
 
     // Normalize gestureEvent.position[0] for CORE.Window[windowID].screen.width and CORE.Window[windowID].screen.height
     gestureEvent.position[0].x /= (float)GetScreenWidth(windowID);

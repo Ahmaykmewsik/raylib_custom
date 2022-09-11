@@ -1474,7 +1474,7 @@ void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int ins
     // no faster, since we're transferring all the transform matrices anyway
     instancesVboId = rlLoadVertexBuffer(instanceTransforms, instances*sizeof(float16), false);
 
-    // Instances transformation matrices are send to shader attribute location: SHADER_LOC_MATRIX_MODEL
+    // Instances transformation matrices are sent to shader attribute location: SHADER_LOC_MATRIX_MODEL
     for (unsigned int i = 0; i < 4; i++)
     {
         rlEnableVertexAttribute(material.shader.locs[SHADER_LOC_MATRIX_MODEL] + i);

@@ -74,8 +74,10 @@ static DWORD getWindowExStyle(const _GLFWwindow* window)
     if (window->monitor || window->floating)
         style |= WS_EX_TOPMOST;
 
-    if (window->mousePassthrough)
-        style = WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
+    // if (window->mousePassthrough)
+    //     style = WS_EX_LAYERED;
+
+    // style |= WS_EX_TRANSPARENT;
 
     return style;
 }
