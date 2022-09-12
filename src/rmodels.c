@@ -873,28 +873,31 @@ void DrawRay(Ray ray, Color color)
 }
 
 // Draw a grid centered at (0, 0, 0)
-void DrawGrid(int slices, float spacing)
+void DrawGrid(int slices, float spacing, Color originColor, float lineIntensity)
 {
     int halfSlices = slices/2;
 
     rlCheckRenderBatchLimit((slices + 2)*4);
+
+    float r = originColor.r / 255.0f;
+    float g = originColor.g / 255.0f;
+    float b = originColor.b / 255.0f;
 
     rlBegin(RL_LINES);
         for (int i = -halfSlices; i <= halfSlices; i++)
         {
             if (i == 0)
             {
-                rlColor3f(0.5f, 0.5f, 0.5f);
-                rlColor3f(0.5f, 0.5f, 0.5f);
-                rlColor3f(0.5f, 0.5f, 0.5f);
-                rlColor3f(0.5f, 0.5f, 0.5f);
+                rlColor3f(r, g, b);
+                rlColor3f(r, g, b);
+                rlColor3f(r, g, b);
             }
             else
             {
-                rlColor3f(0.75f, 0.75f, 0.75f);
-                rlColor3f(0.75f, 0.75f, 0.75f);
-                rlColor3f(0.75f, 0.75f, 0.75f);
-                rlColor3f(0.75f, 0.75f, 0.75f);
+                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
             }
 
             rlVertex3f((float)i*spacing, 0.0f, (float)-halfSlices*spacing);
