@@ -993,7 +993,7 @@ RLAPI void EndDrawing(int windowID);                              // End canvas 
 RLAPI void BeginMode2D(int windowID, Camera2D camera);            // Begin 2D mode with custom camera (2D)
 RLAPI void EndMode2D(int windowID);                               // Ends 2D mode with custom camera
 RLAPI void BeginMode3D(int windowID, Camera3D camera);            // Begin 3D mode with custom camera (3D)
-RLAPI void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimentionsToMatch, Vector2 viewOffset, bool depthTest);   // [CUSTOM] Begin 3D mode with extra parameters (3D)
+RLAPI void BeginMode3DEx(int windowID, Camera3D camera, Vector2 screenDim, Vector2 windowDim, Vector2 viewOffset, bool depthTest);   // [CUSTOM] Begin 3D mode with extra parameters (3D)
 RLAPI void EndMode3D(int windowID);                               // Ends 3D mode and returns to default 2D orthographic mode
 RLAPI void BeginTextureMode(int windowID, RenderTexture2D target);// Begin drawing to render texture
 RLAPI void EndTextureMode(int windowID);                          // Ends drawing to render texture

@@ -291,7 +291,7 @@ void UpdateCamera(Camera *camera)
     //NOTE: only does fancy stuff with the position from the first window 
 
     //[CUSTOM] Mouse position is handled externaly from raylib
-    Vector2 mousePosition = {}; 
+    Vector2 mousePosition = {0, 0}; 
     float mouseWheelMove = GetMouseWheelMove();
 
     // Keys input detection

@@ -604,6 +604,7 @@ static bool isDrawingDirectlyIntoWindow;
 static bool isDrawingIntoTexture;              
 static bool isDrawing2D;
 static bool isDrawing3D;
+static bool isScissoring;
 
 //----------------------------------------------------------------------------------
 // Other Modules Functions Declaration (required by core)
@@ -1955,7 +1956,8 @@ void HideCursor(int windowID)
 //NOTE(Ahmayk): this is probably broken
 bool IsCursorHidden(void)
 {
-    return CORE.Input.Mouse.cursorHidden;
+    // return CORE.Input.Mouse.cursorHidden;
+    return false;
 }
 
 // Enables cursor (unlock cursor)
@@ -2221,7 +2223,7 @@ void BeginMode3D(int windowID, Camera3D camera)
     // rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
 }
 
-void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimensionsToMatch, Vector2 viewOffset, bool depthTest)
+void BeginMode3DEx(int windowID, Camera3D camera, Vector2 screenDim, Vector2 windowDim, Vector2 viewOffset, bool depthTest)
 {
     Assert(isDrawing3D);
     Assert(isDrawing2D);
@@ -2233,17 +2235,19 @@ void BeginMode3DEx(int windowID, Camera3D camera, Vector2 dimensionsToMatch, Vec
     rlPushMatrix();              // Save previous matrix, which contains the settings for the 2d ortho projection
     rlLoadIdentity();            // Reset current matrix (projection)
 
-    float aspect = dimensionsToMatch.x / dimensionsToMatch.y;
-
     // Setup perspective projection
-    // CUSTOM SETUP - ensures 1:1 ratio from 2D to 3D, and matching differnet sized resolutions to the same view
-    double top = 0.000005 * dimensionsToMatch.y;
-    double right = top * aspect;
+    // CUSTOM SETUP - ensures 1:1 ratio from 2D to 3D 1 unit away in 3D persepctive
+    float screenAspect = screenDim.x / screenDim.y;
+    //TODO: Why 600? The reason why this needs to be 600 is lost on me.
+    double top = RL_CULL_DISTANCE_NEAR * (600 / windowDim.y); 
+    double right = top * screenAspect;
 
     double offsetX = RayLerp(0, 0.01, viewOffset.x);
     double offsetY = RayLerp(0, 0.01, -viewOffset.y);
 
-    rlFrustum(-right + offsetX, right + offsetX, -top + offsetY, top + offsetY, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+    rlFrustum(-right + offsetX, right + offsetX,
+              -top + offsetY, top + offsetY,
+              RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
 
     rlMatrixMode(RL_MODELVIEW); // Switch back to modelview matrix
     rlLoadIdentity();           // Reset current matrix (modelview)
@@ -2363,6 +2367,9 @@ void EndBlendMode(void)
 // NOTE: Scissor rec refers to bottom-left corner, we change it to upper-left
 void BeginScissorMode(int windowID, int x, int y, int width, int height)
 {
+    Assert(isScissoring);
+    isScissoring = true;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlEnableScissorTest();
@@ -2382,6 +2389,8 @@ void BeginScissorMode(int windowID, int x, int y, int width, int height)
 // End scissor mode
 void EndScissorMode(void)
 {
+    Assert(!isScissoring);
+    isScissoring = false;
     rlDrawRenderBatchActive();      // Update and draw internal render batch
     rlDisableScissorTest();
 }
@@ -2818,6 +2827,7 @@ float GetFrameTime(void)
 #else
     InvalidCodePath
 #endif
+    return 0.0f;
 }
 
 // Get elapsed time measure in seconds since InitTimer()
