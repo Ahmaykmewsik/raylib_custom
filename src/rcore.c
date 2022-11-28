@@ -2239,7 +2239,7 @@ void BeginMode3DEx(int windowID, Camera3D camera, Vector2 screenDim, Vector2 win
     // CUSTOM SETUP - ensures 1:1 ratio from 2D to 3D 1 unit away in 3D persepctive
     float screenAspect = screenDim.x / screenDim.y;
     //TODO: Why 600? The reason why this needs to be 600 is lost on me.
-    double top = RL_CULL_DISTANCE_NEAR * (600 / windowDim.y); 
+    double top = RL_CULL_DISTANCE_NEAR * 0.6; 
     double right = top * screenAspect;
 
     double offsetX = RayLerp(0, 0.01, viewOffset.x);
@@ -2367,8 +2367,8 @@ void EndBlendMode(void)
 // NOTE: Scissor rec refers to bottom-left corner, we change it to upper-left
 void BeginScissorMode(int windowID, int x, int y, int width, int height)
 {
-    Assert(isScissoring);
-    isScissoring = true;
+    // Assert(isScissoring);
+    // isScissoring = true;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
@@ -2389,8 +2389,8 @@ void BeginScissorMode(int windowID, int x, int y, int width, int height)
 // End scissor mode
 void EndScissorMode(void)
 {
-    Assert(!isScissoring);
-    isScissoring = false;
+    // Assert(!isScissoring);
+    // isScissoring = false;
     rlDrawRenderBatchActive();      // Update and draw internal render batch
     rlDisableScissorTest();
 }
@@ -2634,7 +2634,13 @@ Ray GetMouseRay(int windowID, Vector2 mouse, Camera camera)
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
         // Calculate projection matrix from perspective
-        matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        // matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+
+        //CUSTOM: This is the magic fov that results in 2D == 3D at 1 unit away.
+        //The reason for this is because of trigonomitry. Don't ask me why I don't remember.
+        //TODO: Make this not so hard coded. 
+        float magicFov = 53.1301; 
+        matProj = MatrixPerspective(magicFov * DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     }
     else if (camera.projection == CAMERA_ORTHOGRAPHIC)
     {

@@ -898,11 +898,11 @@ typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);     // F
 // Ahmaykmewsik's Custom Fun World of Fun Times 
 //------------------------------------------------------------------------------------
 #define Assert(expression) \
-    if (!!expression)      \
+    if (!!(expression))      \
     {                      \
         *(int *)0 = 0;     \
     }
-#define InvalidCodePath Assert(1)
+#define InvalidCodePath Assert(1);
 #define UnimplementedCodePath InvalidCodePath 
 #define InvalidDefaultCase \
     default:               \
