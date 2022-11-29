@@ -563,12 +563,16 @@ RLAPI void rlDisableFramebuffer(void);                  // Disable render textur
 RLAPI void rlActiveDrawBuffers(int count);              // Activate multiple draw color buffers
 
 // General render state
-RLAPI void rlEnableColorBlend(void);                     // Enable color blending
+RLAPI void rlEnableColorBlend(void);                    // Enable color blending
 RLAPI void rlDisableColorBlend(void);                   // Disable color blending
+RLAPI void rlEnableColorMask(void);                     // Enable color masking
+RLAPI void rlDisableColorMask(void);                    // Disable color masking 
 RLAPI void rlEnableDepthTest(void);                     // Enable depth test
 RLAPI void rlDisableDepthTest(void);                    // Disable depth test
 RLAPI void rlEnableDepthMask(void);                     // Enable depth write
 RLAPI void rlDisableDepthMask(void);                    // Disable depth write
+RLAPI void rlEnableStencilTest(void);                   // Enable stencil test
+RLAPI void rlDisableStencilTest(void);                  // Disable stencil test
 RLAPI void rlEnableBackfaceCulling(void);               // Enable backface culling
 RLAPI void rlDisableBackfaceCulling(void);              // Disable backface culling
 RLAPI void rlEnableScissorTest(void);                   // Enable scissor test
@@ -1632,6 +1636,12 @@ void rlEnableColorBlend(void) { glEnable(GL_BLEND); }
 // Disable color blending
 void rlDisableColorBlend(void) { glDisable(GL_BLEND); }
 
+// Enable color mask 
+void rlEnableColorMask(void) { glColorMask(false, false, false, false); }
+
+// Disable color mask 
+void rlDisableColorMask(void) { glColorMask(true, true, true, true); }
+
 // Enable depth test
 void rlEnableDepthTest(void) { glEnable(GL_DEPTH_TEST); }
 
@@ -1643,6 +1653,12 @@ void rlEnableDepthMask(void) { glDepthMask(GL_TRUE); }
 
 // Disable depth write
 void rlDisableDepthMask(void) { glDepthMask(GL_FALSE); }
+
+// Enable stencil test
+void rlEnableStencilTest(void) { glEnable(GL_STENCIL_TEST); }
+
+// Disable stencil test
+void rlDisableStencilTest(void) { glDisable(GL_STENCIL_TEST); }
 
 // Enable backface culling
 void rlEnableBackfaceCulling(void) { glEnable(GL_CULL_FACE); }
