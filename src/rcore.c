@@ -2223,49 +2223,11 @@ void BeginMode3D(int windowID, Camera3D camera)
     // rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
 }
 
-void BeginMode3DEx(int windowID, Camera3D camera, Vector2 screenDim, Vector2 windowDim, Vector2 viewOffset, bool depthTest)
-{
-    Assert(isDrawing3D);
-    Assert(isDrawing2D);
-    isDrawing3D = true;
-
-    rlDrawRenderBatchActive(); // Update and draw internal render batch
-
-    rlMatrixMode(RL_PROJECTION); // Switch to projection matrix
-    rlPushMatrix();              // Save previous matrix, which contains the settings for the 2d ortho projection
-    rlLoadIdentity();            // Reset current matrix (projection)
-
-    // Setup perspective projection
-    // CUSTOM SETUP - ensures 1:1 ratio from 2D to 3D 1 unit away in 3D persepctive
-    float screenAspect = screenDim.x / screenDim.y;
-    //TODO: Why 600? The reason why this needs to be 600 is lost on me.
-    double top = RL_CULL_DISTANCE_NEAR * 0.6; 
-    double right = top * screenAspect;
-
-    double offsetX = RayLerp(0, 0.01, viewOffset.x);
-    double offsetY = RayLerp(0, 0.01, -viewOffset.y);
-
-    rlFrustum(-right + offsetX, right + offsetX,
-              -top + offsetY, top + offsetY,
-              RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
-
-    rlMatrixMode(RL_MODELVIEW); // Switch back to modelview matrix
-    rlLoadIdentity();           // Reset current matrix (modelview)
-
-    // Setup Camera view
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
-    rlMultMatrixf(MatrixToFloat(matView)); // Multiply modelview matrix by view matrix (camera)
-
-    if (depthTest)
-        rlEnableDepthTest(); // Enable DEPTH_TEST for 3D
-}
-
-
 // Ends 3D mode and returns to default 2D orthographic mode
 void EndMode3D(int windowID)
 {
-    Assert(!isDrawing3D);
-    Assert(isDrawing2D);
+    // Assert(!isDrawing3D);
+    // Assert(isDrawing2D);
     isDrawing3D = false;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
@@ -2320,7 +2282,7 @@ void BeginTextureMode(int windowID, RenderTexture2D target)
 void EndTextureMode(int windowID)
 {
     // Assert(isDrawingDirectlyIntoWindow);
-    Assert(!isDrawingIntoTexture);
+    // Assert(!isDrawingIntoTexture);
     isDrawingIntoTexture = false;
 
     // All Render Textures are required to be created on context 0

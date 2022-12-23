@@ -883,22 +883,28 @@ void DrawGrid(int slices, float spacing, Color originColor, float lineIntensity)
     float g = originColor.g / 255.0f;
     float b = originColor.b / 255.0f;
 
+
     rlBegin(RL_LINES);
         for (int i = -halfSlices; i <= halfSlices; i++)
         {
-            if (i == 0)
-            {
-                rlColor3f(r, g, b);
-                rlColor3f(r, g, b);
-                rlColor3f(r, g, b);
-            }
-            else
-            {
-                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
-                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
-                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
-                rlColor3f(lineIntensity, lineIntensity, lineIntensity);
-            }
+
+            rlColor3f(r, g, b);
+            rlColor3f(r, g, b);
+            rlColor3f(r, g, b);
+
+            // if (i == 0)
+            // {
+            //     rlColor3f(r, g, b);
+            //     rlColor3f(r, g, b);
+            //     rlColor3f(r, g, b);
+            // }
+            // else
+            // {
+            //     rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+            //     rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+            //     rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+            //     rlColor3f(lineIntensity, lineIntensity, lineIntensity);
+            // }
 
             rlVertex3f((float)i*spacing, 0.0f, (float)-halfSlices*spacing);
             rlVertex3f((float)i*spacing, 0.0f, (float)halfSlices*spacing);
