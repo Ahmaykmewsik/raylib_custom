@@ -175,7 +175,7 @@ RMAPI float Clamp(float value, float min, float max)
 }
 
 // Calculate linear interpolation between two floats
-RMAPI float Lerp(float start, float end, float amount)
+RMAPI float RayLerp(float start, float end, float amount)
 {
     float result = start + amount*(end - start);
 
