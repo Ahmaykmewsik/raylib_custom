@@ -190,7 +190,7 @@ static Vector4 *LoadImageDataNormalized(Image image);       // Load pixel data f
 //----------------------------------------------------------------------------------
 
 // Load image from file into CPU memory (RAM)
-Image LoadImage(const char *fileName)
+Image RayLoadImage(const char *fileName)
 {
     Image image = { 0 };
 
@@ -277,7 +277,7 @@ Image LoadImageAnim(const char *fileName, int *frames)
 #else
     if (false) { }
 #endif
-    else image = LoadImage(fileName);
+    else image = RayLoadImage(fileName);
 
     // TODO: Support APNG animated images
 
@@ -2795,7 +2795,7 @@ Texture2D LoadTexture(const char *fileName)
 {
     Texture2D texture = { 0 };
 
-    Image image = LoadImage(fileName);
+    Image image = RayLoadImage(fileName);
 
     if (image.data != NULL)
     {
@@ -3102,17 +3102,17 @@ void SetTextureWrap(Texture2D texture, int wrap)
 // Draw a Texture2D
 void DrawTexture(Texture2D texture, int posX, int posY, Color tint)
 {
-    DrawTextureEx(texture, (Vector2){ (float)posX, (float)posY }, 0.0f, 1.0f, tint);
+    RayDrawTextureEx(texture, (Vector2){ (float)posX, (float)posY }, 0.0f, 1.0f, tint);
 }
 
 // Draw a Texture2D with position defined as Vector2
 void DrawTextureV(Texture2D texture, Vector2 position, Color tint)
 {
-    DrawTextureEx(texture, position, 0, 1.0f, tint);
+    RayDrawTextureEx(texture, position, 0, 1.0f, tint);
 }
 
 // Draw a Texture2D with extended parameters
-void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint)
+void RayDrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint)
 {
     RayRectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
     RayRectangle dest = { position.x, position.y, (float)texture.width*scale, (float)texture.height*scale };

@@ -11,7 +11,7 @@
 *
 *   #define SUPPORT_DEFAULT_FONT
 *       Load default raylib font on initialization to be used by DrawText() and MeasureText().
-*       If no default font loaded, DrawTextEx() and MeasureTextEx() are required.
+*       If no default font loaded, RayDrawTextEx() and MeasureTextEx() are required.
 *
 *   #define TEXTSPLIT_MAX_TEXT_BUFFER_LENGTH
 *       TextSplit() function static buffer max size
@@ -319,7 +319,7 @@ RayFont LoadFont(const char *fileName)
     else
 #endif
     {
-        Image image = LoadImage(fileName);
+        Image image = RayLoadImage(fileName);
         if (image.data != NULL) font = LoadFontFromImage(image, MAGENTA, FONT_TTF_DEFAULT_FIRST_CHAR);
         UnloadImage(image);
     }
@@ -851,13 +851,13 @@ void DrawText(const char *text, int posX, int posY, int fontSize, Color color)
         if (fontSize < defaultFontSize) fontSize = defaultFontSize;
         int spacing = fontSize/defaultFontSize;
 
-        DrawTextEx(GetFontDefault(), text, position, (float)fontSize, (float)spacing, color);
+        RayDrawTextEx(GetFontDefault(), text, position, (float)fontSize, (float)spacing, color);
     }
 }
 
 // Draw text using RayFont
 // NOTE: chars spacing is NOT proportional to fontSize
-void DrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
+void RayDrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
 {
     if (font.texture.id == 0) font = GetFontDefault();  // Security check in case of not valid font
 
@@ -911,7 +911,7 @@ void DrawTextPro(RayFont font, const char *text, Vector2 position, Vector2 origi
         rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
         rlTranslatef(-origin.x, -origin.y, 0.0f);
 
-        DrawTextEx(font, text, (Vector2){ 0.0f, 0.0f }, fontSize, spacing, tint);
+        RayDrawTextEx(font, text, (Vector2){ 0.0f, 0.0f }, fontSize, spacing, tint);
 
     rlPopMatrix();
 }
@@ -1729,7 +1729,7 @@ static RayFont LoadBMFont(const char *fileName)
 
     TRACELOGD("    > Image loading path: %s", imPath);
 
-    Image imFont = LoadImage(imPath);
+    Image imFont = RayLoadImage(imPath);
 
     if (imFont.format == PIXELFORMAT_UNCOMPRESSED_GRAYSCALE)
     {

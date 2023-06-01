@@ -1224,7 +1224,7 @@ static char *LoadFileText(const char *fileName);            // -- GuiLoadStyle()
 static const char *GetDirectoryPath(const char *filePath);  // -- GuiLoadStyle()
 
 static Vector2 MeasureTextEx(RayFont font, const char *text, float fontSize, float spacing);   // -- GetTextWidth(), GuiTextBoxMulti()
-static void DrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);  // -- GuiDrawText()
+static void RayDrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);  // -- GuiDrawText()
 //-------------------------------------------------------------------------------
 
 // raylib functions already implemented in raygui
@@ -3907,7 +3907,7 @@ static void GuiDrawText(const char *text, RayRectangle bounds, int alignment, Co
             position.x += (RAYGUI_ICON_SIZE*guiIconScale + ICON_TEXT_PADDING);
         }
 #endif
-        DrawTextEx(guiFont, text, position, (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING), tint);
+        RayDrawTextEx(guiFont, text, position, (float)GuiGetStyle(DEFAULT, TEXT_SIZE), (float)GuiGetStyle(DEFAULT, TEXT_SPACING), tint);
         //---------------------------------------------------------------------------------
     }
 }

@@ -986,7 +986,7 @@ bool ExportWaveAsCode(Wave wave, const char *fileName)
 }
 
 // Play a sound
-void PlaySound(Sound sound)
+void RayPlaySound(Sound sound)
 {
     PlayAudioBuffer(sound.stream.buffer);
 }

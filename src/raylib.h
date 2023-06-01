@@ -897,12 +897,19 @@ typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);     // F
 //------------------------------------------------------------------------------------
 // Ahmaykmewsik's Custom Fun World of Fun Times 
 //------------------------------------------------------------------------------------
+
+#if !defined(Assert)
 #define Assert(expression) \
     if (!!(expression))      \
     {                      \
         *(int *)0 = 0;     \
     }
+#endif
+
+#if !defined(InvalidCodePath)
 #define InvalidCodePath Assert(1);
+#endif
+
 #define UnimplementedCodePath InvalidCodePath 
 #define InvalidDefaultCase \
     default:               \
@@ -910,6 +917,7 @@ typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);     // F
         InvalidCodePath;   \
     }                      \
     break;
+
 
 //------------------------------------------------------------------------------------
 // Global Variables Definition
@@ -1230,7 +1238,7 @@ RLAPI RayRectangle GetCollisionRec(RayRectangle rec1, RayRectangle rec2);       
 
 // Image loading functions
 // NOTE: This functions do not require GPU access
-RLAPI Image LoadImage(const char *fileName);                                                             // Load image from file into CPU memory (RAM)
+RLAPI Image RayLoadImage(const char *fileName);                                                             // Load image from file into CPU memory (RAM)
 RLAPI Image LoadImageRaw(const char *fileName, int width, int height, int format, int headerSize);       // Load image from RAW file data
 RLAPI Image LoadImageAnim(const char *fileName, int *frames);                                            // Load image sequence from file (frames appended to image.data)
 RLAPI Image LoadImageFromMemory(const char *fileType, const unsigned char *fileData, int dataSize);      // Load image from memory buffer, fileType refers to extension: i.e. '.png'
@@ -1319,7 +1327,7 @@ RLAPI void SetTextureWrap(Texture2D texture, int wrap);                         
 // Texture drawing functions
 RLAPI void DrawTexture(Texture2D texture, int posX, int posY, Color tint);                               // Draw a Texture2D
 RLAPI void DrawTextureV(Texture2D texture, Vector2 position, Color tint);                                // Draw a Texture2D with position defined as Vector2
-RLAPI void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);  // Draw a Texture2D with extended parameters
+RLAPI void RayDrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);  // Draw a Texture2D with extended parameters
 RLAPI void DrawTextureRec(Texture2D texture, RayRectangle source, Vector2 position, Color tint);            // Draw a part of a texture defined by a rectangle
 RLAPI void DrawTextureQuad(Texture2D texture, Vector2 tiling, Vector2 offset, RayRectangle quad, Color tint);  // Draw texture quad with tiling and offset parameters
 RLAPI void DrawTextureTiled(Texture2D texture, RayRectangle source, RayRectangle dest, Vector2 origin, float rotation, float scale, Color tint);      // Draw part of a texture (defined by a rectangle) with rotation and scale tiled into dest.
@@ -1359,7 +1367,7 @@ RLAPI void UnloadFont(RayFont font);                                            
 // Text drawing functions
 RLAPI void DrawFPS(int posX, int posY);                                                     // Draw current FPS
 RLAPI void DrawText(const char *text, int posX, int posY, int fontSize, Color color);       // Draw text (using default font)
-RLAPI void DrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);    // Draw text using font and additional parameters
+RLAPI void RayDrawTextEx(RayFont font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);    // Draw text using font and additional parameters
 RLAPI void DrawTextPro(RayFont font, const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint); // Draw text using Font and pro parameters (rotation)
 RLAPI void DrawTextCodepoint(RayFont font, int codepoint, Vector2 position, float fontSize, Color tint);   // Draw one character (codepoint)
 
@@ -1515,7 +1523,7 @@ RLAPI bool ExportWave(Wave wave, const char *fileName);               // Export 
 RLAPI bool ExportWaveAsCode(Wave wave, const char *fileName);         // Export wave sample data to code (.h), returns true on success
 
 // Wave/Sound management functions
-RLAPI void PlaySound(Sound sound);                                    // Play a sound
+RLAPI void RayPlaySound(Sound sound);                                    // Play a sound
 RLAPI void StopSound(Sound sound);                                    // Stop playing a sound
 RLAPI void PauseSound(Sound sound);                                   // Pause a sound
 RLAPI void ResumeSound(Sound sound);                                  // Resume a paused sound
