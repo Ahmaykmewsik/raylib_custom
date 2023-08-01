@@ -357,7 +357,7 @@ typedef struct AudioData {
     } Buffer;
     struct {
         unsigned int poolCounter;                               // AudioBuffer pointers pool counter
-        AudioBuffer *pool[MAX_AUDIO_BUFFER_POOL_CHANNELS];      // Multichannel AudioBuffer pointers pool
+        AudioBuffer *pool[16];      // Multichannel AudioBuffer pointers pool
         unsigned int channels[MAX_AUDIO_BUFFER_POOL_CHANNELS];  // AudioBuffer pool channels
     } MultiChannel;
 } AudioData;
