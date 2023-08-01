@@ -278,23 +278,23 @@ typedef struct NPatchInfo {
     int layout;             // Layout of the n-patch: 3x3, 1x3 or 3x1
 } NPatchInfo;
 
-// GlyphInfo, font characters glyphs info
-typedef struct GlyphInfo {
+// RayGlyphInfo, font characters glyphs info
+typedef struct RayGlyphInfo {
     int value;              // Character value (Unicode)
     int offsetX;            // Character offset X when drawing
     int offsetY;            // Character offset Y when drawing
     int advanceX;           // Character advance position X
     Image image;            // Character image data
-} GlyphInfo;
+} RayGlyphInfo;
 
-// Font, font texture and GlyphInfo array data
+// Font, font texture and RayGlyphInfo array data
 typedef struct RayFont {
     int baseSize;           // Base size (default chars height)
     int glyphCount;         // Number of glyph characters
     int glyphPadding;       // Padding around the glyph characters
     Texture2D texture;      // Texture atlas containing the glyphs
     RayRectangle *recs;     // Rectangles in texture for the glyphs
-    GlyphInfo *glyphs;      // Glyphs info data
+    RayGlyphInfo *glyphs;      // Glyphs info data
 } RayFont;
 
 // Camera, defines position/orientation in 3d space
@@ -1359,9 +1359,9 @@ RLAPI RayFont LoadFont(const char *fileName);                                   
 RLAPI RayFont LoadFontEx(const char *fileName, int fontSize, int *fontChars, int glyphCount);  // Load font from file with extended parameters
 RLAPI RayFont LoadFontFromImage(Image image, Color key, int firstChar);                        // Load font from Image (XNA style)
 RLAPI RayFont LoadFontFromMemory(const char *fileType, const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount); // Load font from memory buffer, fileType refers to extension: i.e. '.ttf'
-RLAPI GlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount, int type);      // Load font data for further use
-RLAPI Image GenImageFontAtlas(const GlyphInfo *chars, RayRectangle **recs, int glyphCount, int fontSize, int padding, int packMethod);      // Generate image font atlas using chars info
-RLAPI void UnloadFontData(GlyphInfo *chars, int glyphCount);                                 // Unload font chars info data (RAM)
+RLAPI RayGlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount, int type);      // Load font data for further use
+RLAPI Image GenImageFontAtlas(const RayGlyphInfo *chars, RayRectangle **recs, int glyphCount, int fontSize, int padding, int packMethod);      // Generate image font atlas using chars info
+RLAPI void UnloadFontData(RayGlyphInfo *chars, int glyphCount);                                 // Unload font chars info data (RAM)
 RLAPI void UnloadFont(RayFont font);                                                           // Unload Font from GPU memory (VRAM)
 
 // Text drawing functions
@@ -1375,7 +1375,7 @@ RLAPI void DrawTextCodepoint(RayFont font, int codepoint, Vector2 position, floa
 RLAPI int MeasureText(const char *text, int fontSize);                                      // Measure string width for default font
 RLAPI Vector2 MeasureTextEx(RayFont font, const char *text, float fontSize, float spacing);    // Measure string size for Font
 RLAPI int GetGlyphIndex(RayFont font, int codepoint);                                          // Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found
-RLAPI GlyphInfo GetGlyphInfo(RayFont font, int codepoint);                                     // Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
+RLAPI RayGlyphInfo GetRayGlyphInfo(RayFont font, int codepoint);                                     // Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found
 RLAPI RayRectangle GetGlyphAtlasRec(RayFont font, int codepoint);                                 // Get glyph rectangle in font atlas for a codepoint (unicode character), fallback to '?' if not found
 
 // Text codepoints management functions (unicode characters)

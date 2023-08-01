@@ -292,14 +292,14 @@
         int format;             // Data format (PixelFormat type)
     } Texture2D;
 
-    // GlyphInfo, font characters glyphs info
-    typedef struct GlyphInfo {
+    // RayGlyphInfo, font characters glyphs info
+    typedef struct RayGlyphInfo {
         int value;              // Character value (Unicode)
         int offsetX;            // Character offset X when drawing
         int offsetY;            // Character offset Y when drawing
         int advanceX;           // Character advance position X
         Image image;            // Character image data
-    } GlyphInfo;
+    } RayGlyphInfo;
 
     // TODO: RayFont type is very coupled to raylib, mostly required by GuiLoadStyle()
     // It should be redesigned to be provided by user
@@ -308,7 +308,7 @@
         int glyphCount;         // Number of characters
         Texture2D texture;      // Characters texture atlas
         RayRectangle *recs;        // Characters rectangles in texture
-        GlyphInfo *chars;       // Characters info data
+        RayGlyphInfo *chars;       // Characters info data
     } RayFont;
 #endif
 
@@ -2402,7 +2402,7 @@ bool GuiTextBoxMulti(int windowID, RayRectangle bounds, char *text, int textSize
         int codepoint = GetCodepoint(text + i, &codepointLength);
         int index = GetGlyphIndex(guiFont, codepoint);      // If requested codepoint is not found, we get '?' (0x3f)
         RayRectangle atlasRec = guiFont.recs[index];
-        GlyphInfo glyphInfo = guiFont.glyphs[index];        // Glyph measures
+        RayGlyphInfo glyphInfo = guiFont.glyphs[index];        // Glyph measures
 
         if ((codepointLength == 1) && (codepoint == '\n'))
         {
@@ -3451,7 +3451,7 @@ void GuiLoadStyle(const char *fileName)
                 for (int i = 0; i < font.glyphCount; i++) fread(&font.recs[i], 1, sizeof(RayRectangle), rgsFile);
 
                 // Load font chars info data
-                font.glyphs = (GlyphInfo *)RAYGUI_CALLOC(font.glyphCount, sizeof(GlyphInfo));
+                font.glyphs = (RayGlyphInfo *)RAYGUI_CALLOC(font.glyphCount, sizeof(RayGlyphInfo));
                 for (int i = 0; i < font.glyphCount; i++)
                 {
                     fread(&font.glyphs[i].value, 1, sizeof(int), rgsFile);

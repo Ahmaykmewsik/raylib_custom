@@ -225,7 +225,7 @@ extern void LoadFontDefault(void)
 
     // Allocate space for our characters info data
     // NOTE: This memory should be freed at end! --> CloseWindow()
-    defaultFont.glyphs = (GlyphInfo *)RL_MALLOC(defaultFont.glyphCount*sizeof(GlyphInfo));
+    defaultFont.glyphs = (RayGlyphInfo *)RL_MALLOC(defaultFont.glyphCount*sizeof(RayGlyphInfo));
     defaultFont.recs = (RayRectangle *)RL_MALLOC(defaultFont.glyphCount*sizeof(RayRectangle));
 
     int currentLine = 0;
@@ -456,7 +456,7 @@ RayFont LoadFontFromImage(Image image, Color key, int firstChar)
 
     // We got tempCharValues and tempCharsRecs populated with chars data
     // Now we move temp data to sized charValues and charRecs arrays
-    font.glyphs = (GlyphInfo *)RL_MALLOC(font.glyphCount*sizeof(GlyphInfo));
+    font.glyphs = (RayGlyphInfo *)RL_MALLOC(font.glyphCount*sizeof(RayGlyphInfo));
     font.recs = (RayRectangle *)RL_MALLOC(font.glyphCount*sizeof(RayRectangle));
 
     for (int i = 0; i < font.glyphCount; i++)
@@ -532,7 +532,7 @@ RayFont LoadFontFromMemory(const char *fileType, const unsigned char *fileData, 
 
 // Load font data for further use
 // NOTE: Requires TTF font memory data and can generate SDF data
-GlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount, int type)
+RayGlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSize, int *fontChars, int glyphCount, int type)
 {
     // NOTE: Using some SDF generation default values,
     // trades off precision with ability to handle *smaller* sizes
@@ -549,7 +549,7 @@ GlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSiz
     #define FONT_BITMAP_ALPHA_THRESHOLD     80      // Bitmap (B&W) font generation alpha threshold
 #endif
 
-    GlyphInfo *chars = NULL;
+    RayGlyphInfo *chars = NULL;
 
 #if defined(SUPPORT_FILEFORMAT_TTF)
     // Load font data (including pixel data) from TTF memory file
@@ -582,7 +582,7 @@ GlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSiz
                 genFontChars = true;
             }
 
-            chars = (GlyphInfo *)RL_MALLOC(glyphCount*sizeof(GlyphInfo));
+            chars = (RayGlyphInfo *)RL_MALLOC(glyphCount*sizeof(RayGlyphInfo));
 
             // NOTE: Using simple packaging, one char after another
             for (int i = 0; i < glyphCount; i++)
@@ -658,7 +658,7 @@ GlyphInfo *LoadFontData(const unsigned char *fileData, int dataSize, int fontSiz
 // Generate image font atlas using chars info
 // NOTE: Packing method: 0-Default, 1-Skyline
 #if defined(SUPPORT_FILEFORMAT_TTF)
-Image GenImageFontAtlas(const GlyphInfo *chars, RayRectangle **charRecs, int glyphCount, int fontSize, int padding, int packMethod)
+Image GenImageFontAtlas(const RayGlyphInfo *chars, RayRectangle **charRecs, int glyphCount, int fontSize, int padding, int packMethod)
 {
     Image atlas = { 0 };
 
@@ -799,7 +799,7 @@ Image GenImageFontAtlas(const GlyphInfo *chars, RayRectangle **charRecs, int gly
 #endif
 
 // Unload font glyphs info data (RAM)
-void UnloadFontData(GlyphInfo *glyphs, int glyphCount)
+void UnloadFontData(RayGlyphInfo *glyphs, int glyphCount)
 {
     for (int i = 0; i < glyphCount; i++) UnloadImage(glyphs[i].image);
 
@@ -1043,9 +1043,9 @@ int GetGlyphIndex(RayFont font, int codepoint)
 
 // Get glyph font info data for a codepoint (unicode character)
 // NOTE: If codepoint is not found in the font it fallbacks to '?'
-GlyphInfo GetGlyphInfo(RayFont font, int codepoint)
+RayGlyphInfo GetRayGlyphInfo(RayFont font, int codepoint)
 {
-    GlyphInfo info = { 0 };
+    RayGlyphInfo info = { 0 };
 
     info = font.glyphs[GetGlyphIndex(font, codepoint)];
 
@@ -1760,7 +1760,7 @@ static RayFont LoadBMFont(const char *fileName)
     font.baseSize = fontSize;
     font.glyphCount = glyphCount;
     font.glyphPadding = 0;
-    font.glyphs = (GlyphInfo *)RL_MALLOC(glyphCount*sizeof(GlyphInfo));
+    font.glyphs = (RayGlyphInfo *)RL_MALLOC(glyphCount*sizeof(RayGlyphInfo));
     font.recs = (RayRectangle *)RL_MALLOC(glyphCount*sizeof(RayRectangle));
 
     int charId, charX, charY, charWidth, charHeight, charOffsetX, charOffsetY, charAdvanceX;

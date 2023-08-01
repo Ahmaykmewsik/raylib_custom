@@ -4202,7 +4202,8 @@ static bool InitGraphicsDevice(int windowID, int width, int height)
         CORE.Window[windowID].screenScale = MatrixScale((float)fbWidth/CORE.Window[windowID].screen.width, (float)fbHeight/CORE.Window[windowID].screen.height, 1.0f);
 
         // Mouse input scaling for the new screen size
-        SetMouseScale((float)CORE.Window[windowID].screen.width/fbWidth, (float)CORE.Window[windowID].screen.height/fbHeight);
+        //HACK: raylib does not handle the mouse sorry
+        // SetMouseScale((float)CORE.Window[windowID].screen.width/fbWidth, (float)CORE.Window[windowID].screen.height/fbHeight);
     #endif
     }
 #endif
