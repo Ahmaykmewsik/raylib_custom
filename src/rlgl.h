@@ -53,7 +53,7 @@
 *   #define RL_DEFAULT_BATCH_DRAWCALLS          256    // Default number of batch draw calls (by state changes: mode, texture)
 *   #define RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS    4    // Maximum number of textures units that can be activated on batch drawing (SetShaderValueTexture())
 *
-*   #define RL_MAX_MATRIX_STACK_SIZE             32    // Maximum size of internal Matrix stack
+*   #define RL_MAX_MATRIX_STACK_SIZE             32    // Maximum size of internal RayMatrix stack
 *   #define RL_MAX_SHADER_LOCATIONS              32    // Maximum number of shader locations supported
 *   #define RL_CULL_DISTANCE_NEAR              0.01    // Default projection matrix near cull distance
 *   #define RL_CULL_DISTANCE_FAR             1000.0    // Default projection matrix far cull distance
@@ -212,9 +212,9 @@
     #define RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS       4      // Maximum number of textures units that can be activated on batch drawing (SetShaderValueTexture())
 #endif
 
-// Internal Matrix stack
+// Internal RayMatrix stack
 #ifndef RL_MAX_MATRIX_STACK_SIZE
-    #define RL_MAX_MATRIX_STACK_SIZE                32      // Maximum size of Matrix stack
+    #define RL_MAX_MATRIX_STACK_SIZE                32      // Maximum size of RayMatrix stack
 #endif
 
 // Shader limits
@@ -249,7 +249,7 @@
 #define RL_TEXTURE_WRAP_MIRROR_REPEAT           0x8370      // GL_MIRRORED_REPEAT
 #define RL_TEXTURE_WRAP_MIRROR_CLAMP            0x8742      // GL_MIRROR_CLAMP_EXT
 
-// Matrix modes (equivalent to OpenGL)
+// RayMatrix modes (equivalent to OpenGL)
 #define RL_MODELVIEW                            0x1700      // GL_MODELVIEW
 #define RL_PROJECTION                           0x1701      // GL_PROJECTION
 #define RL_TEXTURE                              0x1702      // GL_TEXTURE
@@ -343,8 +343,8 @@ typedef struct rlDrawCall {
     //unsigned int shaderId;    // Shader id to be used on the draw -> Using RLGL[currentContext].currentShaderId
     unsigned int textureId;     // Texture id to be used on the draw -> Use to create new draw call if changes
 
-    //Matrix projection;      // Projection matrix for this draw -> Using RLGL[currentContext].projection by default
-    //Matrix modelview;       // Modelview matrix for this draw -> Using RLGL[currentContext].modelview by default
+    //RayMatrix projection;      // Projection matrix for this draw -> Using RLGL[currentContext].projection by default
+    //RayMatrix modelview;       // Modelview matrix for this draw -> Using RLGL[currentContext].modelview by default
 } rlDrawCall;
 
 // rlRenderBatch type
@@ -366,13 +366,13 @@ typedef struct rlRenderBatch {
 #endif
 
 #if !defined(RL_MATRIX_TYPE)
-// Matrix, 4x4 components, column major, OpenGL style, right handed
-typedef struct Matrix {
-    float m0, m4, m8, m12;  // Matrix first row (4 components)
-    float m1, m5, m9, m13;  // Matrix second row (4 components)
-    float m2, m6, m10, m14; // Matrix third row (4 components)
-    float m3, m7, m11, m15; // Matrix fourth row (4 components)
-} Matrix;
+// RayMatrix, 4x4 components, column major, OpenGL style, right handed
+typedef struct RayMatrix {
+    float m0, m4, m8, m12;  // RayMatrix first row (4 components)
+    float m1, m5, m9, m13;  // RayMatrix second row (4 components)
+    float m2, m6, m10, m14; // RayMatrix third row (4 components)
+    float m3, m7, m11, m15; // RayMatrix fourth row (4 components)
+} RayMatrix;
 #define RL_MATRIX_TYPE
 #endif
 
@@ -492,21 +492,21 @@ typedef enum {
 } rlShaderAttributeDataType;
 
 //------------------------------------------------------------------------------------
-// Functions Declaration - Matrix operations
+// Functions Declaration - RayMatrix operations
 //------------------------------------------------------------------------------------
 
 #if defined(__cplusplus)
 extern "C" {            // Prevents name mangling of functions
 #endif
 
-RLAPI void rlMatrixMode(int mode);                    // Choose the current matrix to be transformed
-RLAPI void rlPushMatrix(void);                        // Push the current matrix to stack
-RLAPI void rlPopMatrix(void);                         // Pop lattest inserted matrix from stack
+RLAPI void rlRayMatrixMode(int mode);                    // Choose the current matrix to be transformed
+RLAPI void rlPushRayMatrix(void);                        // Push the current matrix to stack
+RLAPI void rlPopRayMatrix(void);                         // Pop lattest inserted matrix from stack
 RLAPI void rlLoadIdentity(void);                      // Reset current matrix to identity matrix
 RLAPI void rlTranslatef(float x, float y, float z);   // Multiply the current matrix by a translation matrix
 RLAPI void rlRotatef(float angle, float x, float y, float z);  // Multiply the current matrix by a rotation matrix
 RLAPI void rlScalef(float x, float y, float z);       // Multiply the current matrix by a scaling matrix
-RLAPI void rlMultMatrixf(float *matf);                // Multiply the current matrix by another matrix
+RLAPI void rlMultRayMatrixf(float *matf);                // Multiply the current matrix by another matrix
 RLAPI void rlFrustum(double left, double right, double bottom, double top, double znear, double zfar);
 RLAPI void rlOrtho(double left, double right, double bottom, double top, double znear, double zfar);
 RLAPI void rlViewport(int x, int y, int width, int height); // Set the viewport area
@@ -663,7 +663,7 @@ RLAPI void rlUnloadShaderProgram(unsigned int id);                              
 RLAPI int rlGetLocationUniform(unsigned int shaderId, const char *uniformName); // Get shader location uniform
 RLAPI int rlGetLocationAttrib(unsigned int shaderId, const char *attribName);   // Get shader location attribute
 RLAPI void rlSetUniform(int locIndex, const void *value, int uniformType, int count);   // Set shader value uniform
-RLAPI void rlSetUniformMatrix(int locIndex, Matrix mat);                        // Set shader value matrix
+RLAPI void rlSetUniformRayMatrix(int locIndex, RayMatrix mat);                        // Set shader value matrix
 RLAPI void rlSetUniformSampler(int locIndex, unsigned int textureId);           // Set shader value sampler
 RLAPI void rlSetShader(unsigned int id, int *locs);                             // Set shader currently active (id and locations)
 
@@ -683,16 +683,16 @@ RLAPI void rlBindShaderBuffer(unsigned int id, unsigned int index);             
 RLAPI void rlCopyBuffersElements(unsigned int destId, unsigned int srcId, unsigned long long destOffset, unsigned long long srcOffset, unsigned long long count); // Copy SSBO buffer data
 RLAPI void rlBindImageTexture(unsigned int id, unsigned int index, unsigned int format, int readonly);  // Bind image texture
 
-// Matrix state management
-RLAPI Matrix rlGetMatrixModelview(void);                                  // Get internal modelview matrix
-RLAPI Matrix rlGetMatrixProjection(void);                                 // Get internal projection matrix
-RLAPI Matrix rlGetMatrixTransform(void);                                  // Get internal accumulated transform matrix
-RLAPI Matrix rlGetMatrixProjectionStereo(int eye);                        // Get internal projection matrix for stereo render (selected eye)
-RLAPI Matrix rlGetMatrixViewOffsetStereo(int eye);                        // Get internal view offset matrix for stereo render (selected eye)
-RLAPI void rlSetMatrixProjection(Matrix proj);                            // Set a custom projection matrix (replaces internal projection matrix)
-RLAPI void rlSetMatrixModelview(Matrix view);                             // Set a custom modelview matrix (replaces internal modelview matrix)
-RLAPI void rlSetMatrixProjectionStereo(Matrix right, Matrix left);        // Set eyes projection matrices for stereo rendering
-RLAPI void rlSetMatrixViewOffsetStereo(Matrix right, Matrix left);        // Set eyes view offsets matrices for stereo rendering
+// RayMatrix state management
+RLAPI RayMatrix rlGetRayMatrixModelview(void);                                  // Get internal modelview matrix
+RLAPI RayMatrix rlGetRayMatrixProjection(void);                                 // Get internal projection matrix
+RLAPI RayMatrix rlGetRayMatrixTransform(void);                                  // Get internal accumulated transform matrix
+RLAPI RayMatrix rlGetRayMatrixProjectionStereo(int eye);                        // Get internal projection matrix for stereo render (selected eye)
+RLAPI RayMatrix rlGetRayMatrixViewOffsetStereo(int eye);                        // Get internal view offset matrix for stereo render (selected eye)
+RLAPI void rlSetRayMatrixProjection(RayMatrix proj);                            // Set a custom projection matrix (replaces internal projection matrix)
+RLAPI void rlSetRayMatrixModelview(RayMatrix view);                             // Set a custom modelview matrix (replaces internal modelview matrix)
+RLAPI void rlSetRayMatrixProjectionStereo(RayMatrix right, RayMatrix left);        // Set eyes projection matrices for stereo rendering
+RLAPI void rlSetRayMatrixViewOffsetStereo(RayMatrix right, RayMatrix left);        // Set eyes view offsets matrices for stereo rendering
 
 // Quick and dirty cube/quad buffers load->draw->unload
 RLAPI void rlLoadDrawCube(void);     // Load and draw a cube
@@ -903,14 +903,14 @@ typedef struct rlglData {
         float normalx, normaly, normalz;    // Current active normal (added on glVertex*())
         unsigned char colorr, colorg, colorb, colora;   // Current active color (added on glVertex*())
 
-        int currentMatrixMode;              // Current matrix mode
-        Matrix *currentMatrix;              // Current matrix pointer
-        Matrix modelview;                   // Default modelview matrix
-        Matrix projection;                  // Default projection matrix
-        Matrix transform;                   // Transform matrix to be used with rlTranslate, rlRotate, rlScale
+        int currentRayMatrixMode;              // Current matrix mode
+        RayMatrix *currentRayMatrix;              // Current matrix pointer
+        RayMatrix modelview;                   // Default modelview matrix
+        RayMatrix projection;                  // Default projection matrix
+        RayMatrix transform;                   // Transform matrix to be used with rlTranslate, rlRotate, rlScale
         bool transformRequired;             // Require transform matrix application to current draw-call vertex (if required)
-        Matrix stack[RL_MAX_MATRIX_STACK_SIZE];// Matrix stack for push/pop
-        int stackCounter;                   // Matrix stack counter
+        RayMatrix stack[RL_MAX_MATRIX_STACK_SIZE];// RayMatrix stack for push/pop
+        int stackCounter;                   // RayMatrix stack counter
 
         unsigned int defaultTextureId;      // Default texture used on shapes/poly drawing (required by shader)
         unsigned int activeTextureId[RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS];    // Active texture ids to be enabled on batch drawing (0 active by default)
@@ -922,8 +922,8 @@ typedef struct rlglData {
         int *currentShaderLocs;             // Current shader locations pointer to be used on rendering (by default, defaultShaderLocs)
 
         bool stereoRender;                  // Stereo rendering flag
-        Matrix projectionStereo[2];         // VR stereo rendering eyes projection matrices
-        Matrix viewOffsetStereo[2];         // VR stereo rendering eyes view offset matrices
+        RayMatrix projectionStereo[2];         // VR stereo rendering eyes projection matrices
+        RayMatrix viewOffsetStereo[2];         // VR stereo rendering eyes view offset matrices
 
         int currentBlendMode;               // Blending mode active
         int glBlendSrcFactor;               // Blending source factor
@@ -997,23 +997,23 @@ static unsigned char *rlGenNextMipmapData(unsigned char *srcData, int srcWidth, 
 #endif
 static int rlGetPixelDataSize(int width, int height, int format);   // Get pixel data size in bytes (image or texture)
 // Auxiliar matrix math functions
-static Matrix rlMatrixIdentity(void);                             // Get identity matrix
-static Matrix rlMatrixMultiply(Matrix left, Matrix right);    // Multiply two matrices
+static RayMatrix rlRayMatrixIdentity(void);                             // Get identity matrix
+static RayMatrix rlRayMatrixMultiply(RayMatrix left, RayMatrix right);    // Multiply two matrices
 
 //----------------------------------------------------------------------------------
-// Module Functions Definition - Matrix operations
+// Module Functions Definition - RayMatrix operations
 //----------------------------------------------------------------------------------
 
 #if defined(GRAPHICS_API_OPENGL_11)
 // Fallback to OpenGL 1.1 function calls
 //---------------------------------------
-void rlMatrixMode(int mode)
+void rlRayMatrixMode(int mode)
 {
     switch (mode)
     {
-        case RL_PROJECTION: glMatrixMode(GL_PROJECTION); break;
-        case RL_MODELVIEW: glMatrixMode(GL_MODELVIEW); break;
-        case RL_TEXTURE: glMatrixMode(GL_TEXTURE); break;
+        case RL_PROJECTION: glRayMatrixMode(GL_PROJECTION); break;
+        case RL_MODELVIEW: glRayMatrixMode(GL_MODELVIEW); break;
+        case RL_TEXTURE: glRayMatrixMode(GL_TEXTURE); break;
         default: break;
     }
 }
@@ -1028,13 +1028,13 @@ void rlOrtho(double left, double right, double bottom, double top, double znear,
     glOrtho(left, right, bottom, top, znear, zfar);
 }
 
-void rlPushMatrix(void) { glPushMatrix(); }
-void rlPopMatrix(void) { glPopMatrix(); }
+void rlPushRayMatrix(void) { glPushRayMatrix(); }
+void rlPopRayMatrix(void) { glPopRayMatrix(); }
 void rlLoadIdentity(void) { glLoadIdentity(); }
 void rlTranslatef(float x, float y, float z) { glTranslatef(x, y, z); }
 void rlRotatef(float angle, float x, float y, float z) { glRotatef(angle, x, y, z); }
 void rlScalef(float x, float y, float z) { glScalef(x, y, z); }
-void rlMultMatrixf(float *matf) { glMultMatrixf(matf); }
+void rlMultRayMatrixf(float *matf) { glMultRayMatrixf(matf); }
 #endif
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 
@@ -1044,43 +1044,43 @@ void rlSetContext(unsigned int c)
 }
 
 // Choose the current matrix to be transformed
-void rlMatrixMode(int mode)
+void rlRayMatrixMode(int mode)
 {
-    if (mode == RL_PROJECTION) RLGL[currentContext].State.currentMatrix = &RLGL[currentContext].State.projection;
-    else if (mode == RL_MODELVIEW) RLGL[currentContext].State.currentMatrix = &RLGL[currentContext].State.modelview;
+    if (mode == RL_PROJECTION) RLGL[currentContext].State.currentRayMatrix = &RLGL[currentContext].State.projection;
+    else if (mode == RL_MODELVIEW) RLGL[currentContext].State.currentRayMatrix = &RLGL[currentContext].State.modelview;
     //else if (mode == RL_TEXTURE) // Not supported
 
-    RLGL[currentContext].State.currentMatrixMode = mode;
+    RLGL[currentContext].State.currentRayMatrixMode = mode;
 }
 
 // Push the current matrix into RLGL[currentContext].State.stack
-void rlPushMatrix(void)
+void rlPushRayMatrix(void)
 {
-    if (RLGL[currentContext].State.stackCounter >= RL_MAX_MATRIX_STACK_SIZE) TRACELOG(RL_LOG_ERROR, "RLGL: Matrix stack overflow (RL_MAX_MATRIX_STACK_SIZE)");
+    if (RLGL[currentContext].State.stackCounter >= RL_MAX_MATRIX_STACK_SIZE) TRACELOG(RL_LOG_ERROR, "RLGL: RayMatrix stack overflow (RL_MAX_MATRIX_STACK_SIZE)");
 
-    if (RLGL[currentContext].State.currentMatrixMode == RL_MODELVIEW)
+    if (RLGL[currentContext].State.currentRayMatrixMode == RL_MODELVIEW)
     {
         RLGL[currentContext].State.transformRequired = true;
-        RLGL[currentContext].State.currentMatrix = &RLGL[currentContext].State.transform;
+        RLGL[currentContext].State.currentRayMatrix = &RLGL[currentContext].State.transform;
     }
 
-    RLGL[currentContext].State.stack[RLGL[currentContext].State.stackCounter] = *RLGL[currentContext].State.currentMatrix;
+    RLGL[currentContext].State.stack[RLGL[currentContext].State.stackCounter] = *RLGL[currentContext].State.currentRayMatrix;
     RLGL[currentContext].State.stackCounter++;
 }
 
 // Pop lattest inserted matrix from RLGL[currentContext].State.stack
-void rlPopMatrix(void)
+void rlPopRayMatrix(void)
 {
     if (RLGL[currentContext].State.stackCounter > 0)
     {
-        Matrix mat = RLGL[currentContext].State.stack[RLGL[currentContext].State.stackCounter - 1];
-        *RLGL[currentContext].State.currentMatrix = mat;
+        RayMatrix mat = RLGL[currentContext].State.stack[RLGL[currentContext].State.stackCounter - 1];
+        *RLGL[currentContext].State.currentRayMatrix = mat;
         RLGL[currentContext].State.stackCounter--;
     }
 
-    if ((RLGL[currentContext].State.stackCounter == 0) && (RLGL[currentContext].State.currentMatrixMode == RL_MODELVIEW))
+    if ((RLGL[currentContext].State.stackCounter == 0) && (RLGL[currentContext].State.currentRayMatrixMode == RL_MODELVIEW))
     {
-        RLGL[currentContext].State.currentMatrix = &RLGL[currentContext].State.modelview;
+        RLGL[currentContext].State.currentRayMatrix = &RLGL[currentContext].State.modelview;
         RLGL[currentContext].State.transformRequired = false;
     }
 }
@@ -1088,13 +1088,13 @@ void rlPopMatrix(void)
 // Reset current matrix to identity matrix
 void rlLoadIdentity(void)
 {
-    *RLGL[currentContext].State.currentMatrix = rlMatrixIdentity();
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixIdentity();
 }
 
 // Multiply the current matrix by a translation matrix
 void rlTranslatef(float x, float y, float z)
 {
-    Matrix matTranslation = {
+    RayMatrix matTranslation = {
         1.0f, 0.0f, 0.0f, x,
         0.0f, 1.0f, 0.0f, y,
         0.0f, 0.0f, 1.0f, z,
@@ -1102,14 +1102,14 @@ void rlTranslatef(float x, float y, float z)
     };
 
     // NOTE: We transpose matrix with multiplication order
-    *RLGL[currentContext].State.currentMatrix = rlMatrixMultiply(matTranslation, *RLGL[currentContext].State.currentMatrix);
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixMultiply(matTranslation, *RLGL[currentContext].State.currentRayMatrix);
 }
 
 // Multiply the current matrix by a rotation matrix
 // NOTE: The provided angle must be in degrees
 void rlRotatef(float angle, float x, float y, float z)
 {
-    Matrix matRotation = rlMatrixIdentity();
+    RayMatrix matRotation = rlRayMatrixIdentity();
 
     // Axis vector (x, y, z) normalization
     float lengthSquared = x*x + y*y + z*z;
@@ -1147,13 +1147,13 @@ void rlRotatef(float angle, float x, float y, float z)
     matRotation.m15 = 1.0f;
 
     // NOTE: We transpose matrix with multiplication order
-    *RLGL[currentContext].State.currentMatrix = rlMatrixMultiply(matRotation, *RLGL[currentContext].State.currentMatrix);
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixMultiply(matRotation, *RLGL[currentContext].State.currentRayMatrix);
 }
 
 // Multiply the current matrix by a scaling matrix
 void rlScalef(float x, float y, float z)
 {
-    Matrix matScale = {
+    RayMatrix matScale = {
         x, 0.0f, 0.0f, 0.0f,
         0.0f, y, 0.0f, 0.0f,
         0.0f, 0.0f, z, 0.0f,
@@ -1161,25 +1161,25 @@ void rlScalef(float x, float y, float z)
     };
 
     // NOTE: We transpose matrix with multiplication order
-    *RLGL[currentContext].State.currentMatrix = rlMatrixMultiply(matScale, *RLGL[currentContext].State.currentMatrix);
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixMultiply(matScale, *RLGL[currentContext].State.currentRayMatrix);
 }
 
 // Multiply the current matrix by another matrix
-void rlMultMatrixf(float *matf)
+void rlMultRayMatrixf(float *matf)
 {
-    // Matrix creation from array
-    Matrix mat = { matf[0], matf[4], matf[8], matf[12],
+    // RayMatrix creation from array
+    RayMatrix mat = { matf[0], matf[4], matf[8], matf[12],
                    matf[1], matf[5], matf[9], matf[13],
                    matf[2], matf[6], matf[10], matf[14],
                    matf[3], matf[7], matf[11], matf[15] };
 
-    *RLGL[currentContext].State.currentMatrix = rlMatrixMultiply(*RLGL[currentContext].State.currentMatrix, mat);
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixMultiply(*RLGL[currentContext].State.currentRayMatrix, mat);
 }
 
 // Multiply the current matrix by a perspective matrix generated by parameters
 void rlFrustum(double left, double right, double bottom, double top, double znear, double zfar)
 {
-    Matrix matFrustum = { 0 };
+    RayMatrix matFrustum = { 0 };
 
     float rl = (float)(right - left);
     float tb = (float)(top - bottom);
@@ -1205,7 +1205,7 @@ void rlFrustum(double left, double right, double bottom, double top, double znea
     matFrustum.m14 = -((float)zfar*(float)znear*2.0f)/fn;
     matFrustum.m15 = 0.0f;
 
-    *RLGL[currentContext].State.currentMatrix = rlMatrixMultiply(*RLGL[currentContext].State.currentMatrix, matFrustum);
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixMultiply(*RLGL[currentContext].State.currentRayMatrix, matFrustum);
 }
 
 // Multiply the current matrix by an orthographic matrix generated by parameters
@@ -1213,7 +1213,7 @@ void rlOrtho(double left, double right, double bottom, double top, double znear,
 {
     // NOTE: If left-right and top-botton values are equal it could create a division by zero,
     // response to it is platform/compiler dependant
-    Matrix matOrtho = { 0 };
+    RayMatrix matOrtho = { 0 };
 
     float rl = (float)(right - left);
     float tb = (float)(top - bottom);
@@ -1236,7 +1236,7 @@ void rlOrtho(double left, double right, double bottom, double top, double znear,
     matOrtho.m14 = -((float)zfar + (float)znear)/fn;
     matOrtho.m15 = 1.0f;
 
-    *RLGL[currentContext].State.currentMatrix = rlMatrixMultiply(*RLGL[currentContext].State.currentMatrix, matOrtho);
+    *RLGL[currentContext].State.currentRayMatrix = rlRayMatrixMultiply(*RLGL[currentContext].State.currentRayMatrix, matOrtho);
 }
 #endif
 
@@ -1319,10 +1319,10 @@ void rlEnd(void)
     // NOTE: This check is combined with usage of rlCheckRenderBatchLimit()
     if (RLGL[currentContext].State.vertexCounter >= (RLGL[currentContext].currentBatch->vertexBuffer[RLGL[currentContext].currentBatch->currentBuffer].elementCount*4 - 4))
     {
-        // WARNING: If we are between rlPushMatrix() and rlPopMatrix() and we need to force a rlDrawRenderBatch(),
-        // we need to call rlPopMatrix() before to recover *RLGL[currentContext].State.currentMatrix (RLGL[currentContext].State.modelview) for the next forced draw call!
+        // WARNING: If we are between rlPushRayMatrix() and rlPopRayMatrix() and we need to force a rlDrawRenderBatch(),
+        // we need to call rlPopRayMatrix() before to recover *RLGL[currentContext].State.currentRayMatrix (RLGL[currentContext].State.modelview) for the next forced draw call!
         // If we have multiple matrix pushed, it will require "RLGL[currentContext].State.stackCounter" pops before launching the draw
-        for (int i = RLGL[currentContext].State.stackCounter; i >= 0; i--) rlPopMatrix();
+        for (int i = RLGL[currentContext].State.stackCounter; i >= 0; i--) rlPopRayMatrix();
         rlDrawRenderBatch(RLGL[currentContext].currentBatch);
     }
 }
@@ -1935,13 +1935,13 @@ void rlglInit(int width, int height)
     RLGL[currentContext].currentBatch = &RLGL[currentContext].defaultBatch;
 
     // Init stack matrices (emulating OpenGL 1.1)
-    for (int i = 0; i < RL_MAX_MATRIX_STACK_SIZE; i++) RLGL[currentContext].State.stack[i] = rlMatrixIdentity();
+    for (int i = 0; i < RL_MAX_MATRIX_STACK_SIZE; i++) RLGL[currentContext].State.stack[i] = rlRayMatrixIdentity();
 
     // Init internal matrices
-    RLGL[currentContext].State.transform = rlMatrixIdentity();
-    RLGL[currentContext].State.projection = rlMatrixIdentity();
-    RLGL[currentContext].State.modelview = rlMatrixIdentity();
-    RLGL[currentContext].State.currentMatrix = &RLGL[currentContext].State.modelview;
+    RLGL[currentContext].State.transform = rlRayMatrixIdentity();
+    RLGL[currentContext].State.projection = rlRayMatrixIdentity();
+    RLGL[currentContext].State.modelview = rlRayMatrixIdentity();
+    RLGL[currentContext].State.currentRayMatrix = &RLGL[currentContext].State.modelview;
 #endif  // GRAPHICS_API_OPENGL_33 || GRAPHICS_API_OPENGL_ES2
 
     // Initialize OpenGL default states
@@ -2414,8 +2414,8 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
         //batch.draws[i].vaoId = 0;
         //batch.draws[i].shaderId = 0;
         batch.draws[i].textureId = RLGL[currentContext].State.defaultTextureId;
-        //batch.draws[i].RLGL[currentContext].State.projection = rlMatrixIdentity();
-        //batch.draws[i].RLGL[currentContext].State.modelview = rlMatrixIdentity();
+        //batch.draws[i].RLGL[currentContext].State.projection = rlRayMatrixIdentity();
+        //batch.draws[i].RLGL[currentContext].State.modelview = rlRayMatrixIdentity();
     }
 
     batch.bufferCount = numBuffers;    // Record buffer count
@@ -2522,8 +2522,8 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
 
     // Draw batch vertex buffers (considering VR stereo if required)
     //------------------------------------------------------------------------------------------------------------
-    Matrix matProjection = RLGL[currentContext].State.projection;
-    Matrix matModelView = RLGL[currentContext].State.modelview;
+    RayMatrix matProjection = RLGL[currentContext].State.projection;
+    RayMatrix matModelView = RLGL[currentContext].State.modelview;
 
     int eyeCount = 1;
     if (RLGL[currentContext].State.stereoRender) eyeCount = 2;
@@ -2536,9 +2536,9 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
             rlViewport(eye*RLGL[currentContext].State.framebufferWidth/2, 0, RLGL[currentContext].State.framebufferWidth/2, RLGL[currentContext].State.framebufferHeight);
 
             // Set current eye view offset to modelview matrix
-            rlSetMatrixModelview(rlMatrixMultiply(matModelView, RLGL[currentContext].State.viewOffsetStereo[eye]));
+            rlSetRayMatrixModelview(rlRayMatrixMultiply(matModelView, RLGL[currentContext].State.viewOffsetStereo[eye]));
             // Set current eye projection matrix
-            rlSetMatrixProjection(RLGL[currentContext].State.projectionStereo[eye]);
+            rlSetRayMatrixProjection(RLGL[currentContext].State.projectionStereo[eye]);
         }
 
         // Draw buffers
@@ -2548,14 +2548,14 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
             glUseProgram(RLGL[currentContext].State.currentShaderId);
 
             // Create modelview-projection matrix and upload to shader
-            Matrix matMVP = rlMatrixMultiply(RLGL[currentContext].State.modelview, RLGL[currentContext].State.projection);
+            RayMatrix matMVP = rlRayMatrixMultiply(RLGL[currentContext].State.modelview, RLGL[currentContext].State.projection);
             float matMVPfloat[16] = {
                 matMVP.m0, matMVP.m1, matMVP.m2, matMVP.m3,
                 matMVP.m4, matMVP.m5, matMVP.m6, matMVP.m7,
                 matMVP.m8, matMVP.m9, matMVP.m10, matMVP.m11,
                 matMVP.m12, matMVP.m13, matMVP.m14, matMVP.m15
             };
-            glUniformMatrix4fv(RLGL[currentContext].State.currentShaderLocs[RL_SHADER_LOC_MATRIX_MVP], 1, false, matMVPfloat);
+            glUniformRayMatrix4fv(RLGL[currentContext].State.currentShaderLocs[RL_SHADER_LOC_MATRIX_MVP], 1, false, matMVPfloat);
 
             if (RLGL[currentContext].ExtSupported.vao) glBindVertexArray(batch->vertexBuffer[batch->currentBuffer].vaoId);
             else
@@ -3824,7 +3824,7 @@ void rlSetVertexAttributeDefault(int locIndex, const void *value, int attribType
 }
 
 // Set shader value uniform matrix
-void rlSetUniformMatrix(int locIndex, Matrix mat)
+void rlSetUniformRayMatrix(int locIndex, RayMatrix mat)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     float matfloat[16] = {
@@ -3833,7 +3833,7 @@ void rlSetUniformMatrix(int locIndex, Matrix mat)
         mat.m8, mat.m9, mat.m10, mat.m11,
         mat.m12, mat.m13, mat.m14, mat.m15
     };
-    glUniformMatrix4fv(locIndex, 1, false, matfloat);
+    glUniformRayMatrix4fv(locIndex, 1, false, matfloat);
 #endif
 }
 
@@ -4010,12 +4010,12 @@ void rlBindImageTexture(unsigned int id, unsigned int index, unsigned int format
 #endif
 }
 
-// Matrix state management
+// RayMatrix state management
 //-----------------------------------------------------------------------------------------
 // Get internal modelview matrix
-Matrix rlGetMatrixModelview(void)
+RayMatrix rlGetRayMatrixModelview(void)
 {
-    Matrix matrix = rlMatrixIdentity();
+    RayMatrix matrix = rlRayMatrixIdentity();
 #if defined(GRAPHICS_API_OPENGL_11)
     float mat[16];
     glGetFloatv(GL_MODELVIEW_MATRIX, mat);
@@ -4042,12 +4042,12 @@ Matrix rlGetMatrixModelview(void)
 }
 
 // Get internal projection matrix
-Matrix rlGetMatrixProjection(void)
+RayMatrix rlGetRayMatrixProjection(void)
 {
 #if defined(GRAPHICS_API_OPENGL_11)
     float mat[16];
     glGetFloatv(GL_PROJECTION_MATRIX,mat);
-    Matrix m;
+    RayMatrix m;
     m.m0 = mat[0];
     m.m1 = mat[1];
     m.m2 = mat[2];
@@ -4071,23 +4071,23 @@ Matrix rlGetMatrixProjection(void)
 }
 
 // Get internal accumulated transform matrix
-Matrix rlGetMatrixTransform(void)
+RayMatrix rlGetRayMatrixTransform(void)
 {
-    Matrix mat = rlMatrixIdentity();
+    RayMatrix mat = rlRayMatrixIdentity();
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // TODO: Consider possible transform matrices in the RLGL[currentContext].State.stack
     // Is this the right order? or should we start with the first stored matrix instead of the last one?
-    //Matrix matStackTransform = rlMatrixIdentity();
-    //for (int i = RLGL[currentContext].State.stackCounter; i > 0; i--) matStackTransform = rlMatrixMultiply(RLGL[currentContext].State.stack[i], matStackTransform);
+    //RayMatrix matStackTransform = rlRayMatrixIdentity();
+    //for (int i = RLGL[currentContext].State.stackCounter; i > 0; i--) matStackTransform = rlRayMatrixMultiply(RLGL[currentContext].State.stack[i], matStackTransform);
     mat = RLGL[currentContext].State.transform;
 #endif
     return mat;
 }
 
 // Get internal projection matrix for stereo render (selected eye)
-RLAPI Matrix rlGetMatrixProjectionStereo(int eye)
+RLAPI RayMatrix rlGetRayMatrixProjectionStereo(int eye)
 {
-    Matrix mat = rlMatrixIdentity();
+    RayMatrix mat = rlRayMatrixIdentity();
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     mat = RLGL[currentContext].State.projectionStereo[eye];
 #endif
@@ -4095,9 +4095,9 @@ RLAPI Matrix rlGetMatrixProjectionStereo(int eye)
 }
 
 // Get internal view offset matrix for stereo render (selected eye)
-RLAPI Matrix rlGetMatrixViewOffsetStereo(int eye)
+RLAPI RayMatrix rlGetRayMatrixViewOffsetStereo(int eye)
 {
-    Matrix mat = rlMatrixIdentity();
+    RayMatrix mat = rlRayMatrixIdentity();
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     mat = RLGL[currentContext].State.viewOffsetStereo[eye];
 #endif
@@ -4105,7 +4105,7 @@ RLAPI Matrix rlGetMatrixViewOffsetStereo(int eye)
 }
 
 // Set a custom modelview matrix (replaces internal modelview matrix)
-void rlSetMatrixModelview(Matrix view)
+void rlSetRayMatrixModelview(RayMatrix view)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL[currentContext].State.modelview = view;
@@ -4113,7 +4113,7 @@ void rlSetMatrixModelview(Matrix view)
 }
 
 // Set a custom projection matrix (replaces internal projection matrix)
-void rlSetMatrixProjection(Matrix projection)
+void rlSetRayMatrixProjection(RayMatrix projection)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL[currentContext].State.projection = projection;
@@ -4121,7 +4121,7 @@ void rlSetMatrixProjection(Matrix projection)
 }
 
 // Set eyes projection matrices for stereo rendering
-void rlSetMatrixProjectionStereo(Matrix right, Matrix left)
+void rlSetRayMatrixProjectionStereo(RayMatrix right, RayMatrix left)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL[currentContext].State.projectionStereo[0] = right;
@@ -4130,7 +4130,7 @@ void rlSetMatrixProjectionStereo(Matrix right, Matrix left)
 }
 
 // Set eyes view offsets matrices for stereo rendering
-void rlSetMatrixViewOffsetStereo(Matrix right, Matrix left)
+void rlSetRayMatrixViewOffsetStereo(RayMatrix right, RayMatrix left)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL[currentContext].State.viewOffsetStereo[0] = right;
@@ -4673,9 +4673,9 @@ static int rlGetPixelDataSize(int width, int height, int format)
 // Auxiliar math functions
 
 // Get identity matrix
-static Matrix rlMatrixIdentity(void)
+static RayMatrix rlRayMatrixIdentity(void)
 {
-    Matrix result = {
+    RayMatrix result = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
@@ -4687,9 +4687,9 @@ static Matrix rlMatrixIdentity(void)
 
 // Get two matrix multiplication
 // NOTE: When multiplying matrices... the order matters!
-static Matrix rlMatrixMultiply(Matrix left, Matrix right)
+static RayMatrix rlRayMatrixMultiply(RayMatrix left, RayMatrix right)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     result.m0 = left.m0*right.m0 + left.m1*right.m4 + left.m2*right.m8 + left.m3*right.m12;
     result.m1 = left.m0*right.m1 + left.m1*right.m5 + left.m2*right.m9 + left.m3*right.m13;

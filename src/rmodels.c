@@ -47,7 +47,7 @@
 
 #include "utils.h"          // Required for: TRACELOG(), LoadFileData(), LoadFileText(), SaveFileText()
 #include "rlgl.h"           // OpenGL abstraction layer to OpenGL 1.1, 2.1, 3.3+ or ES2
-#include "raymath.h"        // Required for: Vector3, Quaternion and Matrix functionality
+#include "raymath.h"        // Required for: Vector3, Quaternion and RayMatrix functionality
 
 #include <stdio.h>          // Required for: sprintf()
 #include <stdlib.h>         // Required for: malloc(), free()
@@ -162,14 +162,14 @@ void DrawPoint3D(Vector3 position, Color color)
 {
     rlCheckRenderBatchLimit(8);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(position.x, position.y, position.z);
         rlBegin(RL_LINES);
             rlColor4ub(color.r, color.g, color.b, color.a);
             rlVertex3f(0.0f, 0.0f, 0.0f);
             rlVertex3f(0.0f, 0.0f, 0.1f);
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw a circle in 3D world space
@@ -177,7 +177,7 @@ void DrawCircle3D(Vector3 center, float radius, Vector3 rotationAxis, float rota
 {
     rlCheckRenderBatchLimit(2*36);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(center.x, center.y, center.z);
         rlRotatef(rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z);
 
@@ -190,7 +190,7 @@ void DrawCircle3D(Vector3 center, float radius, Vector3 rotationAxis, float rota
                 rlVertex3f(sinf(DEG2RAD*(i + 10))*radius, cosf(DEG2RAD*(i + 10))*radius, 0.0f);
             }
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw a color-filled triangle (vertex in counter-clockwise order!)
@@ -245,7 +245,7 @@ void DrawCube(Vector3 position, float width, float height, float length, Color c
 
     rlCheckRenderBatchLimit(36);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
         rlTranslatef(position.x, position.y, position.z);
         //rlRotatef(45, 0, 1, 0);
@@ -308,7 +308,7 @@ void DrawCube(Vector3 position, float width, float height, float length, Color c
             rlVertex3f(x - width/2, y + height/2, z + length/2);  // Top Left
             rlVertex3f(x - width/2, y - height/2, z - length/2);  // Bottom Right
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw cube (Vector version)
@@ -326,7 +326,7 @@ void DrawCubeWires(Vector3 position, float width, float height, float length, Co
 
     rlCheckRenderBatchLimit(36);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(position.x, position.y, position.z);
 
         rlBegin(RL_LINES);
@@ -384,7 +384,7 @@ void DrawCubeWires(Vector3 position, float width, float height, float length, Co
             rlVertex3f(x+width/2, y-height/2, z+length/2);  // Top right front
             rlVertex3f(x+width/2, y-height/2, z-length/2);  // Top right back
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw cube wires (vector version)
@@ -405,7 +405,7 @@ void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float hei
 
     rlSetTexture(texture.id);
 
-    //rlPushMatrix();
+    //rlPushRayMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
         //rlTranslatef(2.0f, 0.0f, 0.0f);
         //rlRotatef(45, 0, 1, 0);
@@ -450,7 +450,7 @@ void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float hei
             rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);  // Top Right Of The Texture and Quad
             rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);  // Top Left Of The Texture and Quad
         rlEnd();
-    //rlPopMatrix();
+    //rlPopRayMatrix();
 
     rlSetTexture(0);
 }
@@ -554,7 +554,7 @@ void DrawSphereEx(Vector3 centerPos, float radius, int rings, int slices, Color 
     int numVertex = (rings + 2)*slices*6;
     rlCheckRenderBatchLimit(numVertex);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> translate)
         rlTranslatef(centerPos.x, centerPos.y, centerPos.z);
         rlScalef(radius, radius, radius);
@@ -588,7 +588,7 @@ void DrawSphereEx(Vector3 centerPos, float radius, int rings, int slices, Color 
                 }
             }
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw sphere wires
@@ -597,7 +597,7 @@ void DrawSphereWires(Vector3 centerPos, float radius, int rings, int slices, Col
     int numVertex = (rings + 2)*slices*6;
     rlCheckRenderBatchLimit(numVertex);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> translate)
         rlTranslatef(centerPos.x, centerPos.y, centerPos.z);
         rlScalef(radius, radius, radius);
@@ -632,7 +632,7 @@ void DrawSphereWires(Vector3 centerPos, float radius, int rings, int slices, Col
                 }
             }
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw a cylinder
@@ -644,7 +644,7 @@ void DrawCylinder(Vector3 position, float radiusTop, float radiusBottom, float h
     int numVertex = sides*6;
     rlCheckRenderBatchLimit(numVertex);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(position.x, position.y, position.z);
 
         rlBegin(RL_TRIANGLES);
@@ -691,7 +691,7 @@ void DrawCylinder(Vector3 position, float radiusTop, float radiusBottom, float h
                 rlVertex3f(sinf(DEG2RAD*i)*radiusBottom, 0, cosf(DEG2RAD*i)*radiusBottom);
             }
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw a cylinder with base at startPos and top at endPos
@@ -762,7 +762,7 @@ void DrawCylinderWires(Vector3 position, float radiusTop, float radiusBottom, fl
     int numVertex = sides*8;
     rlCheckRenderBatchLimit(numVertex);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(position.x, position.y, position.z);
 
         rlBegin(RL_LINES);
@@ -783,7 +783,7 @@ void DrawCylinderWires(Vector3 position, float radiusTop, float radiusBottom, fl
                 rlVertex3f(sinf(DEG2RAD*i)*radiusBottom, 0, cosf(DEG2RAD*i)*radiusBottom);
             }
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 
@@ -842,7 +842,7 @@ void DrawPlane(Vector3 centerPos, Vector2 size, Color color)
     rlCheckRenderBatchLimit(4);
 
     // NOTE: Plane is always created on XZ ground
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(centerPos.x, centerPos.y, centerPos.z);
         rlScalef(size.x, 1.0f, size.y);
 
@@ -855,7 +855,7 @@ void DrawPlane(Vector3 centerPos, Vector2 size, Color color)
             rlVertex3f(0.5f, 0.0f, 0.5f);
             rlVertex3f(0.5f, 0.0f, -0.5f);
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw a ray line
@@ -934,7 +934,7 @@ Model LoadModel(int windowID, const char *fileName)
 #endif
 
     // Make sure model transform is set to identity matrix!
-    model.transform = MatrixIdentity();
+    model.transform = RayMatrixIdentity();
 
     if (model.meshCount == 0)
     {
@@ -975,7 +975,7 @@ Model LoadModelFromMesh(Mesh mesh)
 {
     Model model = { 0 };
 
-    model.transform = MatrixIdentity();
+    model.transform = RayMatrixIdentity();
 
     model.meshCount = 1;
     model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));
@@ -1189,7 +1189,7 @@ void UpdateMeshBuffer(Mesh mesh, int index, void *data, int dataSize, int offset
 }
 
 // Draw a 3d mesh with material and transform
-void DrawMesh(Mesh mesh, Material material, Matrix transform)
+void DrawMesh(Mesh mesh, Material material, RayMatrix transform)
 {
     //Meshes MUST belong to the current context!
     Assert(mesh.windowID != GetCurrentContext());
@@ -1207,8 +1207,8 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     rlEnableStatePointer(GL_NORMAL_ARRAY, mesh.normals);
     rlEnableStatePointer(GL_COLOR_ARRAY, mesh.colors);
 
-    rlPushMatrix();
-        rlMultMatrixf(MatrixToFloat(transform));
+    rlPushRayMatrix();
+        rlMultRayMatrixf(RayMatrixToFloat(transform));
         rlColor4ub(material.maps[MATERIAL_MAP_DIFFUSE].color.r,
                    material.maps[MATERIAL_MAP_DIFFUSE].color.g,
                    material.maps[MATERIAL_MAP_DIFFUSE].color.b,
@@ -1216,7 +1216,7 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
 
         if (mesh.indices != NULL) rlDrawVertexArrayElements(0, mesh.triangleCount*3, mesh.indices);
         else rlDrawVertexArray(0, mesh.vertexCount);
-    rlPopMatrix();
+    rlPopRayMatrix();
 
     rlDisableStatePointer(GL_VERTEX_ARRAY);
     rlDisableStatePointer(GL_TEXTURE_COORD_ARRAY);
@@ -1262,29 +1262,29 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     // just in case stereo render is required and we need to modify them
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
-    // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
-    Matrix matView = rlGetMatrixModelview();
-    Matrix matModelView = MatrixIdentity();
-    Matrix matProjection = rlGetMatrixProjection();
+    // that modifies it, all use rlPushRayMatrix() and rlPopRayMatrix()
+    RayMatrix matModel = RayMatrixIdentity();
+    RayMatrix matView = rlGetRayMatrixModelview();
+    RayMatrix matModelView = RayMatrixIdentity();
+    RayMatrix matProjection = rlGetRayMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
-    if (material.shader.locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
-    if (material.shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
+    if (material.shader.locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
+    if (material.shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
     // Model transformation matrix is send to shader uniform location: SHADER_LOC_MATRIX_MODEL
-    if (material.shader.locs[SHADER_LOC_MATRIX_MODEL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_MODEL], transform);
+    if (material.shader.locs[SHADER_LOC_MATRIX_MODEL] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_MODEL], transform);
 
     // Accumulate several model transformations:
     //    transform: model transformation provided (includes DrawModel() params combined with model.transform)
-    //    rlGetMatrixTransform(): rlgl internal transform matrix due to push/pop matrix stack
-    matModel = MatrixMultiply(transform, rlGetMatrixTransform());
+    //    rlGetRayMatrixTransform(): rlgl internal transform matrix due to push/pop matrix stack
+    matModel = RayMatrixMultiply(transform, rlGetRayMatrixTransform());
 
     // Get model-view matrix
-    matModelView = MatrixMultiply(matModel, matView);
+    matModelView = RayMatrixMultiply(matModel, matView);
 
     // Upload model normal matrix (if locations available)
-    if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
+    if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], RayMatrixTranspose(RayMatrixInvert(matModel)));
     //-----------------------------------------------------
 
     // Bind active texture maps (if available)
@@ -1371,17 +1371,17 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     for (int eye = 0; eye < eyeCount; eye++)
     {
         // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection = MatrixIdentity();
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
+        RayMatrix matModelViewProjection = RayMatrixIdentity();
+        if (eyeCount == 1) matModelViewProjection = RayMatrixMultiply(matModelView, matProjection);
         else
         {
             // Setup current eye viewport (half screen width)
             rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
+            matModelViewProjection = RayMatrixMultiply(RayMatrixMultiply(matModelView, rlGetRayMatrixViewOffsetStereo(eye)), rlGetRayMatrixProjectionStereo(eye));
         }
 
         // Send combined model-view-projection matrix to shader
-        rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
+        rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
 
         // Draw mesh
         if (mesh.indices != NULL) rlDrawVertexArrayElements(0, mesh.triangleCount*3, 0);
@@ -1410,13 +1410,13 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     rlDisableShader();
 
     // Restore rlgl internal modelview and projection matrices
-    rlSetMatrixModelview(matView);
-    rlSetMatrixProjection(matProjection);
+    rlSetRayMatrixModelview(matView);
+    rlSetRayMatrixProjection(matProjection);
 #endif
 }
 
 // Draw multiple mesh instances with material and different transforms
-void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int instances)
+void DrawMeshInstanced(Mesh mesh, Material material, RayMatrix *transforms, int instances)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Instancing required variables
@@ -1458,21 +1458,21 @@ void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int ins
     // just in case stereo render is required and we need to modify them
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
-    // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
-    Matrix matView = rlGetMatrixModelview();
-    Matrix matModelView = MatrixIdentity();
-    Matrix matProjection = rlGetMatrixProjection();
+    // that modifies it, all use rlPushRayMatrix() and rlPopRayMatrix()
+    RayMatrix matModel = RayMatrixIdentity();
+    RayMatrix matView = rlGetRayMatrixModelview();
+    RayMatrix matModelView = RayMatrixIdentity();
+    RayMatrix matProjection = rlGetRayMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
-    if (material.shader.locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
-    if (material.shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
+    if (material.shader.locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
+    if (material.shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
     // Create instances buffer
     instanceTransforms = (float16 *)RL_MALLOC(instances*sizeof(float16));
 
     // Fill buffer with instances transformations as float16 arrays
-    for (int i = 0; i < instances; i++) instanceTransforms[i] = MatrixToFloatV(transforms[i]);
+    for (int i = 0; i < instances; i++) instanceTransforms[i] = RayMatrixToFloatV(transforms[i]);
 
     // Enable mesh VAO to attach new buffer
     rlEnableVertexArray(mesh.vaoId);
@@ -1487,7 +1487,7 @@ void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int ins
     for (unsigned int i = 0; i < 4; i++)
     {
         rlEnableVertexAttribute(material.shader.locs[SHADER_LOC_MATRIX_MODEL] + i);
-        rlSetVertexAttribute(material.shader.locs[SHADER_LOC_MATRIX_MODEL] + i, 4, RL_FLOAT, 0, sizeof(Matrix), (void *)(i*sizeof(Vector4)));
+        rlSetVertexAttribute(material.shader.locs[SHADER_LOC_MATRIX_MODEL] + i, 4, RL_FLOAT, 0, sizeof(RayMatrix), (void *)(i*sizeof(Vector4)));
         rlSetVertexAttributeDivisor(material.shader.locs[SHADER_LOC_MATRIX_MODEL] + i, 1);
     }
 
@@ -1496,10 +1496,10 @@ void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int ins
 
     // Accumulate internal matrix transform (push/pop) and view matrix
     // NOTE: In this case, model instance transformation must be computed in the shader
-    matModelView = MatrixMultiply(rlGetMatrixTransform(), matView);
+    matModelView = RayMatrixMultiply(rlGetRayMatrixTransform(), matView);
 
     // Upload model normal matrix (if locations available)
-    if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
+    if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], RayMatrixTranspose(RayMatrixInvert(matModel)));
     //-----------------------------------------------------
 
     // Bind active texture maps (if available)
@@ -1586,17 +1586,17 @@ void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int ins
     for (int eye = 0; eye < eyeCount; eye++)
     {
         // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection = MatrixIdentity();
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
+        RayMatrix matModelViewProjection = RayMatrixIdentity();
+        if (eyeCount == 1) matModelViewProjection = RayMatrixMultiply(matModelView, matProjection);
         else
         {
             // Setup current eye viewport (half screen width)
             rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
+            matModelViewProjection = RayMatrixMultiply(RayMatrixMultiply(matModelView, rlGetRayMatrixViewOffsetStereo(eye)), rlGetRayMatrixProjectionStereo(eye));
         }
 
         // Send combined model-view-projection matrix to shader
-        rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
+        rlSetUniformRayMatrix(material.shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
 
         // Draw mesh instanced
         if (mesh.indices != NULL) rlDrawVertexArrayElementsInstanced(0, mesh.triangleCount*3, 0, instances);
@@ -3267,14 +3267,14 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
 {
     // Calculate transformation matrix from function parameters
     // Get transform matrix (rotation -> scale -> translation)
-    Matrix matScale = MatrixScale(scale.x, scale.y, scale.z);
-    Matrix matRotation = MatrixRotate(rotationAxis, rotationAngle*DEG2RAD);
-    Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
+    RayMatrix matScale = RayMatrixScale(scale.x, scale.y, scale.z);
+    RayMatrix matRotation = RayMatrixRotate(rotationAxis, rotationAngle*DEG2RAD);
+    RayMatrix matTranslation = RayMatrixTranslate(position.x, position.y, position.z);
 
-    Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+    RayMatrix matTransform = RayMatrixMultiply(RayMatrixMultiply(matScale, matRotation), matTranslation);
 
     // Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
-    model.transform = MatrixMultiply(model.transform, matTransform);
+    model.transform = RayMatrixMultiply(model.transform, matTransform);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -3334,7 +3334,7 @@ void DrawBillboardPro(Camera camera, Texture2D texture, RayRectangle source, Vec
     // NOTE: Billboard size will maintain source rectangle aspect ratio, size will represent billboard width
     Vector2 sizeRatio = { size.y, size.x*(float)source.height/source.width };
 
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+    RayMatrix matView = RayMatrixLookAt(camera.position, camera.target, camera.up);
 
     Vector3 right = { matView.m0, matView.m4, matView.m8 };
     //Vector3 up = { matView.m1, matView.m5, matView.m9 };
@@ -3592,7 +3592,7 @@ RayCollision GetRayCollisionBox(Ray ray, BoundingBox box)
 }
 
 // Get collision info between ray and mesh
-RayCollision GetRayCollisionMesh(Ray ray, Mesh mesh, Matrix transform)
+RayCollision GetRayCollisionMesh(Ray ray, Mesh mesh, RayMatrix transform)
 {
     RayCollision collision = { 0 };
 
@@ -4993,7 +4993,7 @@ static Model LoadVOX(const char *fileName)
     }
 
     // Build models from meshes
-    model.transform = MatrixIdentity();
+    model.transform = RayMatrixIdentity();
 
     model.meshCount = meshescount;
     model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));

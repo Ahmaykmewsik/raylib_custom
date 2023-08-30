@@ -211,12 +211,12 @@ typedef struct Vector4 {
 typedef Vector4 Quaternion;
 
 // Matrix, 4x4 components, column major, OpenGL style, right handed
-typedef struct Matrix {
+typedef struct RayMatrix {
     float m0, m4, m8, m12;  // Matrix first row (4 components)
     float m1, m5, m9, m13;  // Matrix second row (4 components)
     float m2, m6, m10, m14; // Matrix third row (4 components)
     float m3, m7, m11, m15; // Matrix fourth row (4 components)
-} Matrix;
+} RayMatrix;
 
 // Color, 4 components, R8G8B8A8 (32bit)
 typedef struct Color {
@@ -378,7 +378,7 @@ typedef struct BoneInfo {
 
 // Model, meshes, materials and animation data
 typedef struct Model {
-    Matrix transform;       // Local transform matrix
+    RayMatrix transform;       // Local transform matrix
 
     int meshCount;          // Number of meshes
     int materialCount;      // Number of materials
@@ -472,8 +472,8 @@ typedef struct VrDeviceInfo {
 
 // VrStereoConfig, VR stereo rendering configuration for simulator
 typedef struct VrStereoConfig {
-    Matrix projection[2];           // VR projection matrices (per eye)
-    Matrix viewOffset[2];           // VR view offset matrices (per eye)
+    RayMatrix projection[2];           // VR projection matrices (per eye)
+    RayMatrix viewOffset[2];           // VR view offset matrices (per eye)
     float leftLensCenter[2];        // VR left lens center
     float rightLensCenter[2];       // VR right lens center
     float leftScreenCenter[2];      // VR left screen center
@@ -1025,14 +1025,14 @@ RLAPI int GetShaderLocation(Shader shader, const char *uniformName);       // Ge
 RLAPI int GetShaderLocationAttrib(Shader shader, const char *attribName);  // Get shader attribute location
 RLAPI void SetShaderValue(Shader shader, int locIndex, const void *value, int uniformType);               // Set shader uniform value
 RLAPI void SetShaderValueV(Shader shader, int locIndex, const void *value, int uniformType, int count);   // Set shader uniform value vector
-RLAPI void SetShaderValueMatrix(Shader shader, int locIndex, Matrix mat);         // Set shader uniform value (matrix 4x4)
+RLAPI void SetShaderValueRayMatrix(Shader shader, int locIndex, RayMatrix mat);         // Set shader uniform value (matrix 4x4)
 RLAPI void SetShaderValueTexture(Shader shader, int locIndex, Texture2D texture); // Set shader uniform value for texture (sampler2d)
 RLAPI void UnloadShader(Shader shader);                                    // Unload shader from GPU memory (VRAM)
 
 // Screen-space-related functions
 RLAPI Ray GetMouseRay(int windowID, Vector2 mousePosition, Camera camera); // Get a ray trace from mouse position
-RLAPI Matrix GetCameraMatrix(Camera camera);                      // Get camera transform matrix (view matrix)
-RLAPI Matrix GetCameraMatrix2D(Camera2D camera);                  // Get camera 2d transform matrix
+RLAPI RayMatrix GetCameraRayMatrix(Camera camera);                      // Get camera transform matrix (view matrix)
+RLAPI RayMatrix GetCameraRayMatrix2D(Camera2D camera);                  // Get camera 2d transform matrix
 RLAPI Vector2 GetWorldToScreen(int windowID, Vector3 position, Camera camera);  // Get the screen space position for a 3d world space position
 RLAPI Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int width, int height);   // Get size position for a 3d world space position
 RLAPI Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera); // Get the screen space position for a 2d camera world space position
@@ -1456,8 +1456,8 @@ RLAPI void DrawBillboardPro(Camera camera, Texture2D texture, RayRectangle sourc
 RLAPI void UploadMesh(int windowID, Mesh *mesh, bool dynamic);                              // Upload mesh vertex data in GPU and provide VAO/VBO ids
 RLAPI void UpdateMeshBuffer(Mesh mesh, int index, void *data, int dataSize, int offset);    // Update mesh vertex data in GPU for a specific buffer index
 RLAPI void UnloadMesh(Mesh mesh);                                                           // Unload mesh data from CPU and GPU
-RLAPI void DrawMesh(Mesh mesh, Material material, Matrix transform);                        // Draw a 3d mesh with material and transform
-RLAPI void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int instances); // Draw multiple mesh instances with material and different transforms
+RLAPI void DrawMesh(Mesh mesh, Material material, RayMatrix transform);                        // Draw a 3d mesh with material and transform
+RLAPI void DrawMeshInstanced(Mesh mesh, Material material, RayMatrix *transforms, int instances); // Draw multiple mesh instances with material and different transforms
 RLAPI bool ExportMesh(Mesh mesh, const char *fileName);                                     // Export mesh data to file, returns true on success
 RLAPI BoundingBox GetMeshBoundingBox(Mesh mesh);                                            // Compute mesh bounding box limits
 RLAPI void GenMeshTangents(Mesh *mesh);                                                     // Compute mesh tangents
@@ -1497,7 +1497,7 @@ RLAPI bool CheckCollisionBoxSphere(BoundingBox box, Vector3 center, float radius
 RLAPI RayCollision GetRayCollisionSphere(Ray ray, Vector3 center, float radius);                        // Get collision info between ray and sphere
 RLAPI RayCollision GetRayCollisionBox(Ray ray, BoundingBox box);                                        // Get collision info between ray and box
 RLAPI RayCollision GetRayCollisionModel(Ray ray, Model model);                                          // Get collision info between ray and model
-RLAPI RayCollision GetRayCollisionMesh(Ray ray, Mesh mesh, Matrix transform);                           // Get collision info between ray and mesh
+RLAPI RayCollision GetRayCollisionMesh(Ray ray, Mesh mesh, RayMatrix transform);                           // Get collision info between ray and mesh
 RLAPI RayCollision GetRayCollisionTriangle(Ray ray, Vector3 p1, Vector3 p2, Vector3 p3);                // Get collision info between ray and triangle
 RLAPI RayCollision GetRayCollisionQuad(Ray ray, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4);        // Get collision info between ray and quad
 

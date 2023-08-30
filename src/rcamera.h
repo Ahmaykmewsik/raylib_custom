@@ -443,13 +443,13 @@ void UpdateCamera(Camera *camera)
             else if (CAMERA.angle.y < CAMERA_FIRST_PERSON_MAX_CLAMP*DEG2RAD) CAMERA.angle.y = CAMERA_FIRST_PERSON_MAX_CLAMP*DEG2RAD;
 
             // Calculate translation matrix
-            Matrix matTranslation = { 1.0f, 0.0f, 0.0f, 0.0f,
+            RayMatrix matTranslation = { 1.0f, 0.0f, 0.0f, 0.0f,
                                       0.0f, 1.0f, 0.0f, 0.0f,
                                       0.0f, 0.0f, 1.0f, (CAMERA.targetDistance/CAMERA_FREE_PANNING_DIVIDER),
                                       0.0f, 0.0f, 0.0f, 1.0f };
 
             // Calculate rotation matrix
-            Matrix matRotation = { 1.0f, 0.0f, 0.0f, 0.0f,
+            RayMatrix matRotation = { 1.0f, 0.0f, 0.0f, 0.0f,
                                    0.0f, 1.0f, 0.0f, 0.0f,
                                    0.0f, 0.0f, 1.0f, 0.0f,
                                    0.0f, 0.0f, 0.0f, 1.0f };
@@ -472,7 +472,7 @@ void UpdateCamera(Camera *camera)
             matRotation.m10= cosy*cosx;
 
             // Multiply translation and rotation matrices
-            Matrix matTransform = { 0 };
+            RayMatrix matTransform = { 0 };
             matTransform.m0 = matTranslation.m0*matRotation.m0 + matTranslation.m1*matRotation.m4 + matTranslation.m2*matRotation.m8 + matTranslation.m3*matRotation.m12;
             matTransform.m1 = matTranslation.m0*matRotation.m1 + matTranslation.m1*matRotation.m5 + matTranslation.m2*matRotation.m9 + matTranslation.m3*matRotation.m13;
             matTransform.m2 = matTranslation.m0*matRotation.m2 + matTranslation.m1*matRotation.m6 + matTranslation.m2*matRotation.m10 + matTranslation.m3*matRotation.m14;

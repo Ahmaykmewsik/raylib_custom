@@ -1,6 +1,6 @@
 /**********************************************************************************************
 *
-*   raymath v1.5 - Math functions to work with Vector2, Vector3, Matrix and Quaternions
+*   raymath v1.5 - Math functions to work with Vector2, Vector3, RayMatrix and Quaternions
 *
 *   CONFIGURATION:
 *
@@ -85,9 +85,9 @@
     #define RAD2DEG (180.0f/PI)
 #endif
 
-// Get float vector for Matrix
-#ifndef MatrixToFloat
-    #define MatrixToFloat(mat) (MatrixToFloatV(mat).v)
+// Get float vector for RayMatrix
+#ifndef RayMatrixToFloat
+    #define RayMatrixToFloat(mat) (RayMatrixToFloatV(mat).v)
 #endif
 
 // Get float vector for Vector3
@@ -135,13 +135,13 @@ typedef Vector4 Quaternion;
 #endif
 
 #if !defined(RL_MATRIX_TYPE)
-// Matrix type (OpenGL style 4x4 - right handed, column major)
-typedef struct Matrix {
-    float m0, m4, m8, m12;      // Matrix first row (4 components)
-    float m1, m5, m9, m13;      // Matrix second row (4 components)
-    float m2, m6, m10, m14;     // Matrix third row (4 components)
-    float m3, m7, m11, m15;     // Matrix fourth row (4 components)
-} Matrix;
+// RayMatrix type (OpenGL style 4x4 - right handed, column major)
+typedef struct RayMatrix {
+    float m0, m4, m8, m12;      // RayMatrix first row (4 components)
+    float m1, m5, m9, m13;      // RayMatrix second row (4 components)
+    float m2, m6, m10, m14;     // RayMatrix third row (4 components)
+    float m3, m7, m11, m15;     // RayMatrix fourth row (4 components)
+} RayMatrix;
 #define RL_MATRIX_TYPE
 #endif
 
@@ -613,8 +613,8 @@ RMAPI void Vector3OrthoNormalize(Vector3 *v1, Vector3 *v2)
     *v2 = vn2;
 }
 
-// Transforms a Vector3 by a given Matrix
-RMAPI Vector3 Vector3Transform(Vector3 v, Matrix mat)
+// Transforms a Vector3 by a given RayMatrix
+RMAPI Vector3 Vector3Transform(Vector3 v, RayMatrix mat)
 {
     Vector3 result = { 0 };
 
@@ -721,12 +721,12 @@ RMAPI Vector3 Vector3Barycenter(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 
 // Projects a Vector3 from screen space into object space
 // NOTE: We are avoiding calling other raymath functions despite available
-RMAPI Vector3 Vector3Unproject(Vector3 source, Matrix projection, Matrix view)
+RMAPI Vector3 Vector3Unproject(Vector3 source, RayMatrix projection, RayMatrix view)
 {
     Vector3 result = { 0 };
 
     // Calculate unproject matrix (multiply view patrix by projection matrix) and invert it
-    Matrix matViewProj = {      // MatrixMultiply(view, projection);
+    RayMatrix matViewProj = {      // RayMatrixMultiply(view, projection);
         view.m0*projection.m0 + view.m1*projection.m4 + view.m2*projection.m8 + view.m3*projection.m12,
         view.m0*projection.m1 + view.m1*projection.m5 + view.m2*projection.m9 + view.m3*projection.m13,
         view.m0*projection.m2 + view.m1*projection.m6 + view.m2*projection.m10 + view.m3*projection.m14,
@@ -744,7 +744,7 @@ RMAPI Vector3 Vector3Unproject(Vector3 source, Matrix projection, Matrix view)
         view.m12*projection.m2 + view.m13*projection.m6 + view.m14*projection.m10 + view.m15*projection.m14,
         view.m12*projection.m3 + view.m13*projection.m7 + view.m14*projection.m11 + view.m15*projection.m15 };
 
-    // Calculate inverted matrix -> MatrixInvert(matViewProj);
+    // Calculate inverted matrix -> RayMatrixInvert(matViewProj);
     // Cache the matrix values (speed optimization)
     float a00 = matViewProj.m0, a01 = matViewProj.m1, a02 = matViewProj.m2, a03 = matViewProj.m3;
     float a10 = matViewProj.m4, a11 = matViewProj.m5, a12 = matViewProj.m6, a13 = matViewProj.m7;
@@ -767,7 +767,7 @@ RMAPI Vector3 Vector3Unproject(Vector3 source, Matrix projection, Matrix view)
     // Calculate the invert determinant (inlined to avoid double-caching)
     float invDet = 1.0f/(b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06);
 
-    Matrix matViewProjInv = {
+    RayMatrix matViewProjInv = {
         (a11*b11 - a12*b10 + a13*b09)*invDet,
         (-a01*b11 + a02*b10 - a03*b09)*invDet,
         (a31*b05 - a32*b04 + a33*b03)*invDet,
@@ -816,11 +816,11 @@ RMAPI float3 Vector3ToFloatV(Vector3 v)
 }
 
 //----------------------------------------------------------------------------------
-// Module Functions Definition - Matrix math
+// Module Functions Definition - RayMatrix math
 //----------------------------------------------------------------------------------
 
 // Compute matrix determinant
-RMAPI float MatrixDeterminant(Matrix mat)
+RMAPI float RayMatrixDeterminant(RayMatrix mat)
 {
     float result = 0.0f;
 
@@ -841,7 +841,7 @@ RMAPI float MatrixDeterminant(Matrix mat)
 }
 
 // Get the trace of the matrix (sum of the values along the diagonal)
-RMAPI float MatrixTrace(Matrix mat)
+RMAPI float RayMatrixTrace(RayMatrix mat)
 {
     float result = (mat.m0 + mat.m5 + mat.m10 + mat.m15);
 
@@ -849,9 +849,9 @@ RMAPI float MatrixTrace(Matrix mat)
 }
 
 // Transposes provided matrix
-RMAPI Matrix MatrixTranspose(Matrix mat)
+RMAPI RayMatrix RayMatrixTranspose(RayMatrix mat)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     result.m0 = mat.m0;
     result.m1 = mat.m4;
@@ -874,9 +874,9 @@ RMAPI Matrix MatrixTranspose(Matrix mat)
 }
 
 // Invert provided matrix
-RMAPI Matrix MatrixInvert(Matrix mat)
+RMAPI RayMatrix RayMatrixInvert(RayMatrix mat)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     // Cache the matrix values (speed optimization)
     float a00 = mat.m0, a01 = mat.m1, a02 = mat.m2, a03 = mat.m3;
@@ -921,9 +921,9 @@ RMAPI Matrix MatrixInvert(Matrix mat)
 }
 
 // Normalize provided matrix
-RMAPI Matrix MatrixNormalize(Matrix mat)
+RMAPI RayMatrix RayMatrixNormalize(RayMatrix mat)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     // Cache the matrix values (speed optimization)
     float a00 = mat.m0, a01 = mat.m1, a02 = mat.m2, a03 = mat.m3;
@@ -931,7 +931,7 @@ RMAPI Matrix MatrixNormalize(Matrix mat)
     float a20 = mat.m8, a21 = mat.m9, a22 = mat.m10, a23 = mat.m11;
     float a30 = mat.m12, a31 = mat.m13, a32 = mat.m14, a33 = mat.m15;
 
-    // MatrixDeterminant(mat)
+    // RayMatrixDeterminant(mat)
     float det = a30*a21*a12*a03 - a20*a31*a12*a03 - a30*a11*a22*a03 + a10*a31*a22*a03 +
                 a20*a11*a32*a03 - a10*a21*a32*a03 - a30*a21*a02*a13 + a20*a31*a02*a13 +
                 a30*a01*a22*a13 - a00*a31*a22*a13 - a20*a01*a32*a13 + a00*a21*a32*a13 +
@@ -960,9 +960,9 @@ RMAPI Matrix MatrixNormalize(Matrix mat)
 }
 
 // Get identity matrix
-RMAPI Matrix MatrixIdentity(void)
+RMAPI RayMatrix RayMatrixIdentity(void)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
                       0.0f, 0.0f, 1.0f, 0.0f,
                       0.0f, 0.0f, 0.0f, 1.0f };
@@ -971,9 +971,9 @@ RMAPI Matrix MatrixIdentity(void)
 }
 
 // Add two matrices
-RMAPI Matrix MatrixAdd(Matrix left, Matrix right)
+RMAPI RayMatrix RayMatrixAdd(RayMatrix left, RayMatrix right)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     result.m0 = left.m0 + right.m0;
     result.m1 = left.m1 + right.m1;
@@ -996,9 +996,9 @@ RMAPI Matrix MatrixAdd(Matrix left, Matrix right)
 }
 
 // Subtract two matrices (left - right)
-RMAPI Matrix MatrixSubtract(Matrix left, Matrix right)
+RMAPI RayMatrix RayMatrixSubtract(RayMatrix left, RayMatrix right)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     result.m0 = left.m0 - right.m0;
     result.m1 = left.m1 - right.m1;
@@ -1022,9 +1022,9 @@ RMAPI Matrix MatrixSubtract(Matrix left, Matrix right)
 
 // Get two matrix multiplication
 // NOTE: When multiplying matrices... the order matters!
-RMAPI Matrix MatrixMultiply(Matrix left, Matrix right)
+RMAPI RayMatrix RayMatrixMultiply(RayMatrix left, RayMatrix right)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     result.m0 = left.m0*right.m0 + left.m1*right.m4 + left.m2*right.m8 + left.m3*right.m12;
     result.m1 = left.m0*right.m1 + left.m1*right.m5 + left.m2*right.m9 + left.m3*right.m13;
@@ -1047,9 +1047,9 @@ RMAPI Matrix MatrixMultiply(Matrix left, Matrix right)
 }
 
 // Get translation matrix
-RMAPI Matrix MatrixTranslate(float x, float y, float z)
+RMAPI RayMatrix RayMatrixTranslate(float x, float y, float z)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, x,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, x,
                       0.0f, 1.0f, 0.0f, y,
                       0.0f, 0.0f, 1.0f, z,
                       0.0f, 0.0f, 0.0f, 1.0f };
@@ -1059,9 +1059,9 @@ RMAPI Matrix MatrixTranslate(float x, float y, float z)
 
 // Create rotation matrix from axis and angle
 // NOTE: Angle should be provided in radians
-RMAPI Matrix MatrixRotate(Vector3 axis, float angle)
+RMAPI RayMatrix RayMatrixRotate(Vector3 axis, float angle)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     float x = axis.x, y = axis.y, z = axis.z;
 
@@ -1103,12 +1103,12 @@ RMAPI Matrix MatrixRotate(Vector3 axis, float angle)
 }
 
 // Get x-rotation matrix (angle in radians)
-RMAPI Matrix MatrixRotateX(float angle)
+RMAPI RayMatrix RayMatrixRotateX(float angle)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
                       0.0f, 0.0f, 1.0f, 0.0f,
-                      0.0f, 0.0f, 0.0f, 1.0f }; // MatrixIdentity()
+                      0.0f, 0.0f, 0.0f, 1.0f }; // RayMatrixIdentity()
 
     float cosres = cosf(angle);
     float sinres = sinf(angle);
@@ -1122,12 +1122,12 @@ RMAPI Matrix MatrixRotateX(float angle)
 }
 
 // Get y-rotation matrix (angle in radians)
-RMAPI Matrix MatrixRotateY(float angle)
+RMAPI RayMatrix RayMatrixRotateY(float angle)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
                       0.0f, 0.0f, 1.0f, 0.0f,
-                      0.0f, 0.0f, 0.0f, 1.0f }; // MatrixIdentity()
+                      0.0f, 0.0f, 0.0f, 1.0f }; // RayMatrixIdentity()
 
     float cosres = cosf(angle);
     float sinres = sinf(angle);
@@ -1141,12 +1141,12 @@ RMAPI Matrix MatrixRotateY(float angle)
 }
 
 // Get z-rotation matrix (angle in radians)
-RMAPI Matrix MatrixRotateZ(float angle)
+RMAPI RayMatrix RayMatrixRotateZ(float angle)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
                       0.0f, 0.0f, 1.0f, 0.0f,
-                      0.0f, 0.0f, 0.0f, 1.0f }; // MatrixIdentity()
+                      0.0f, 0.0f, 0.0f, 1.0f }; // RayMatrixIdentity()
 
     float cosres = cosf(angle);
     float sinres = sinf(angle);
@@ -1161,12 +1161,12 @@ RMAPI Matrix MatrixRotateZ(float angle)
 
 
 // Get xyz-rotation matrix (angles in radians)
-RMAPI Matrix MatrixRotateXYZ(Vector3 ang)
+RMAPI RayMatrix RayMatrixRotateXYZ(Vector3 ang)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
                       0.0f, 0.0f, 1.0f, 0.0f,
-                      0.0f, 0.0f, 0.0f, 1.0f }; // MatrixIdentity()
+                      0.0f, 0.0f, 0.0f, 1.0f }; // RayMatrixIdentity()
 
     float cosz = cosf(-ang.z);
     float sinz = sinf(-ang.z);
@@ -1191,9 +1191,9 @@ RMAPI Matrix MatrixRotateXYZ(Vector3 ang)
 }
 
 // Get zyx-rotation matrix (angles in radians)
-RMAPI Matrix MatrixRotateZYX(Vector3 ang)
+RMAPI RayMatrix RayMatrixRotateZYX(Vector3 ang)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     float cz = cosf(ang.z);
     float sz = sinf(ang.z);
@@ -1226,9 +1226,9 @@ RMAPI Matrix MatrixRotateZYX(Vector3 ang)
 }
 
 // Get scaling matrix
-RMAPI Matrix MatrixScale(float x, float y, float z)
+RMAPI RayMatrix RayMatrixScale(float x, float y, float z)
 {
-    Matrix result = { x, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { x, 0.0f, 0.0f, 0.0f,
                       0.0f, y, 0.0f, 0.0f,
                       0.0f, 0.0f, z, 0.0f,
                       0.0f, 0.0f, 0.0f, 1.0f };
@@ -1237,9 +1237,9 @@ RMAPI Matrix MatrixScale(float x, float y, float z)
 }
 
 // Get perspective projection matrix
-RMAPI Matrix MatrixFrustum(double left, double right, double bottom, double top, double near, double far)
+RMAPI RayMatrix RayMatrixFrustum(double left, double right, double bottom, double top, double near, double far)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     float rl = (float)(right - left);
     float tb = (float)(top - bottom);
@@ -1270,16 +1270,16 @@ RMAPI Matrix MatrixFrustum(double left, double right, double bottom, double top,
 
 // Get perspective projection matrix
 // NOTE: Angle should be provided in radians
-RMAPI Matrix MatrixPerspective(double fovy, double aspect, double near, double far)
+RMAPI RayMatrix RayMatrixPerspective(double fovy, double aspect, double near, double far)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     double top = near*tan(fovy*0.5);
     double bottom = -top;
     double right = top*aspect;
     double left = -right;
 
-    // MatrixFrustum(-right, right, -top, top, near, far);
+    // RayMatrixFrustum(-right, right, -top, top, near, far);
     float rl = (float)(right - left);
     float tb = (float)(top - bottom);
     float fn = (float)(far - near);
@@ -1296,9 +1296,9 @@ RMAPI Matrix MatrixPerspective(double fovy, double aspect, double near, double f
 }
 
 // Get orthographic projection matrix
-RMAPI Matrix MatrixOrtho(double left, double right, double bottom, double top, double near, double far)
+RMAPI RayMatrix RayMatrixOrtho(double left, double right, double bottom, double top, double near, double far)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     float rl = (float)(right - left);
     float tb = (float)(top - bottom);
@@ -1325,9 +1325,9 @@ RMAPI Matrix MatrixOrtho(double left, double right, double bottom, double top, d
 }
 
 // Get camera look-at matrix (view matrix)
-RMAPI Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up)
+RMAPI RayMatrix RayMatrixLookAt(Vector3 eye, Vector3 target, Vector3 up)
 {
-    Matrix result = { 0 };
+    RayMatrix result = { 0 };
 
     float length = 0.0f;
     float ilength = 0.0f;
@@ -1380,7 +1380,7 @@ RMAPI Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up)
 }
 
 // Get float array of matrix data
-RMAPI float16 MatrixToFloatV(Matrix mat)
+RMAPI float16 RayMatrixToFloatV(RayMatrix mat)
 {
     float16 result = { 0 };
 
@@ -1405,7 +1405,7 @@ RMAPI float16 MatrixToFloatV(Matrix mat)
 }
 
 //Custom matrix functions
-RMAPI bool MatrixIsNull(Matrix mat)
+RMAPI bool RayMatrixIsNull(RayMatrix mat)
 {
     return !(mat.m0 || mat.m1 || mat.m2 || mat.m3 ||
              mat.m4 || mat.m5 || mat.m6 || mat.m7 ||
@@ -1651,7 +1651,7 @@ RMAPI Quaternion QuaternionFromVector3ToVector3(Vector3 from, Vector3 to)
 }
 
 // Get a quaternion for a given rotation matrix
-RMAPI Quaternion QuaternionFromMatrix(Matrix mat)
+RMAPI Quaternion QuaternionFromRayMatrix(RayMatrix mat)
 {
     Quaternion result = { 0 };
 
@@ -1685,12 +1685,12 @@ RMAPI Quaternion QuaternionFromMatrix(Matrix mat)
 }
 
 // Get a matrix for a given quaternion
-RMAPI Matrix QuaternionToMatrix(Quaternion q)
+RMAPI RayMatrix QuaternionToRayMatrix(Quaternion q)
 {
-    Matrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
+    RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
                       0.0f, 0.0f, 1.0f, 0.0f,
-                      0.0f, 0.0f, 0.0f, 1.0f }; // MatrixIdentity()
+                      0.0f, 0.0f, 0.0f, 1.0f }; // RayMatrixIdentity()
 
     float a2 = q.x*q.x;
     float b2 = q.y*q.y;
@@ -1847,7 +1847,7 @@ RMAPI Vector3 QuaternionToEuler(Quaternion q)
 }
 
 // Transform a quaternion given a transformation matrix
-RMAPI Quaternion QuaternionTransform(Quaternion q, Matrix mat)
+RMAPI Quaternion QuaternionTransform(Quaternion q, RayMatrix mat)
 {
     Quaternion result = { 0 };
 

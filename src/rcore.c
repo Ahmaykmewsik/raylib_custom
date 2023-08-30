@@ -387,7 +387,7 @@ typedef struct CoreData {
         Size currentFbo;                    // Current render width and height (depends on active fbo)
         Size render;                        // Framebuffer width and height (render area, including black bars if required)
         Point renderOffset;                 // Offset from render area (must be divided by 2)
-        Matrix screenScale;                 // Matrix to scale screen (framebuffer rendering)
+        RayMatrix screenScale;                 // RayMatrix to scale screen (framebuffer rendering)
 
         char **dropFilesPath;               // Store dropped files paths as strings
         int dropFileCount;                  // Count dropped files strings
@@ -2025,7 +2025,7 @@ void BeginDrawing(unsigned int windowID)
 #endif
 
     rlLoadIdentity();                   // Reset current matrix (modelview)
-    rlMultMatrixf(MatrixToFloat(CORE.Window[windowID].screenScale)); // Apply screen scaling
+    rlMultRayMatrixf(RayMatrixToFloat(CORE.Window[windowID].screenScale)); // Apply screen scaling
 
     //rlTranslatef(0.375, 0.375, 0);    // HACK to have 2D pixel-perfect drawing on OpenGL 1.1
                                         // NOTE: Not required with OpenGL 3.3+
@@ -2160,10 +2160,10 @@ void BeginMode2D(int windowID, Camera2D camera)
     rlLoadIdentity();               // Reset current matrix (modelview)
 
     // Apply 2d camera transformation to modelview
-    rlMultMatrixf(MatrixToFloat(GetCameraMatrix2D(camera)));
+    rlMultRayMatrixf(RayMatrixToFloat(GetCameraRayMatrix2D(camera)));
 
     // Apply screen scaling if required
-    rlMultMatrixf(MatrixToFloat(CORE.Window[windowID].screenScale));
+    rlMultRayMatrixf(RayMatrixToFloat(CORE.Window[windowID].screenScale));
 }
 
 // Ends 2D mode with custom camera
@@ -2176,7 +2176,7 @@ void EndMode2D(int windowID)
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
     rlLoadIdentity();               // Reset current matrix (modelview)
-    rlMultMatrixf(MatrixToFloat(CORE.Window[windowID].screenScale)); // Apply screen scaling if required
+    rlMultRayMatrixf(RayMatrixToFloat(CORE.Window[windowID].screenScale)); // Apply screen scaling if required
 }
 
 // Initializes 3D mode with custom camera (3D)
@@ -2188,8 +2188,8 @@ void BeginMode3D(int windowID, Camera3D camera)
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
-    rlMatrixMode(RL_PROJECTION);    // Switch to projection matrix
-    rlPushMatrix();                 // Save previous matrix, which contains the settings for the 2d ortho projection
+    rlRayMatrixMode(RL_PROJECTION);    // Switch to projection matrix
+    rlPushRayMatrix();                 // Save previous matrix, which contains the settings for the 2d ortho projection
     rlLoadIdentity();               // Reset current matrix (projection)
 
     float aspect = (float)CORE.Window[windowID].currentFbo.width/(float)CORE.Window[windowID].currentFbo.height;
@@ -2212,12 +2212,12 @@ void BeginMode3D(int windowID, Camera3D camera)
         rlOrtho(-right, right, -top,top, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     }
 
-    rlMatrixMode(RL_MODELVIEW);     // Switch back to modelview matrix
+    rlRayMatrixMode(RL_MODELVIEW);     // Switch back to modelview matrix
     rlLoadIdentity();               // Reset current matrix (modelview)
 
     // Setup Camera view
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
-    rlMultMatrixf(MatrixToFloat(matView));      // Multiply modelview matrix by view matrix (camera)
+    RayMatrix matView = RayMatrixLookAt(camera.position, camera.target, camera.up);
+    rlMultRayMatrixf(RayMatrixToFloat(matView));      // Multiply modelview matrix by view matrix (camera)
 
     //HACK: I don't want this on
     // rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
@@ -2232,13 +2232,13 @@ void EndMode3D(int windowID)
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
-    rlMatrixMode(RL_PROJECTION);    // Switch to projection matrix
-    rlPopMatrix();                  // Restore previous matrix (projection) from matrix stack
+    rlRayMatrixMode(RL_PROJECTION);    // Switch to projection matrix
+    rlPopRayMatrix();                  // Restore previous matrix (projection) from matrix stack
 
-    rlMatrixMode(RL_MODELVIEW);     // Switch back to modelview matrix
+    rlRayMatrixMode(RL_MODELVIEW);     // Switch back to modelview matrix
     rlLoadIdentity();               // Reset current matrix (modelview)
 
-    rlMultMatrixf(MatrixToFloat(CORE.Window[windowID].screenScale)); // Apply screen scaling if required
+    rlMultRayMatrixf(RayMatrixToFloat(CORE.Window[windowID].screenScale)); // Apply screen scaling if required
 
     rlDisableDepthTest();           // Disable DEPTH_TEST for 2D
 }
@@ -2260,14 +2260,14 @@ void BeginTextureMode(int windowID, RenderTexture2D target)
     // Set viewport to framebuffer size
     rlViewport(0, 0, target.texture.width, target.texture.height);
 
-    rlMatrixMode(RL_PROJECTION);    // Switch to projection matrix
+    rlRayMatrixMode(RL_PROJECTION);    // Switch to projection matrix
     rlLoadIdentity();               // Reset current matrix (projection)
 
     // Set orthographic projection to current framebuffer size
     // NOTE: Configured top-left corner as (0, 0)
     rlOrtho(0, target.texture.width, target.texture.height, 0, 0.0f, 1.0f);
 
-    rlMatrixMode(RL_MODELVIEW);     // Switch back to modelview matrix
+    rlRayMatrixMode(RL_MODELVIEW);     // Switch back to modelview matrix
     rlLoadIdentity();               // Reset current matrix (modelview)
 
     //rlScalef(0.0f, -1.0f, 0.0f);  // Flip Y-drawing (?)
@@ -2363,8 +2363,8 @@ void BeginVrStereoMode(VrStereoConfig config)
     rlEnableStereoRender();
 
     // Set stereo render matrices
-    rlSetMatrixProjectionStereo(config.projection[0], config.projection[1]);
-    rlSetMatrixViewOffsetStereo(config.viewOffset[0], config.viewOffset[1]);
+    rlSetRayMatrixProjectionStereo(config.projection[0], config.projection[1]);
+    rlSetRayMatrixViewOffsetStereo(config.viewOffset[0], config.viewOffset[1]);
 }
 
 // End VR drawing process (and desktop mirror)
@@ -2417,17 +2417,17 @@ VrStereoConfig LoadVrStereoConfig(VrDeviceInfo device)
 
         // Compute camera projection matrices
         float projOffset = 4.0f*lensShift;      // Scaled to projection space coordinates [-1..1]
-        Matrix proj = MatrixPerspective(fovy, aspect, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        RayMatrix proj = RayMatrixPerspective(fovy, aspect, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
 
-        config.projection[0] = MatrixMultiply(proj, MatrixTranslate(projOffset, 0.0f, 0.0f));
-        config.projection[1] = MatrixMultiply(proj, MatrixTranslate(-projOffset, 0.0f, 0.0f));
+        config.projection[0] = RayMatrixMultiply(proj, RayMatrixTranslate(projOffset, 0.0f, 0.0f));
+        config.projection[1] = RayMatrixMultiply(proj, RayMatrixTranslate(-projOffset, 0.0f, 0.0f));
 
         // Compute camera transformation matrices
         // NOTE: Camera movement might seem more natural if we model the head.
         // Our axis of rotation is the base of our head, so we might want to add
         // some y (base of head to eye level) and -z (center of head to eye protrusion) to the camera positions.
-        config.viewOffset[0] = MatrixTranslate(-device.interpupillaryDistance*0.5f, 0.075f, 0.045f);
-        config.viewOffset[1] = MatrixTranslate(device.interpupillaryDistance*0.5f, 0.075f, 0.045f);
+        config.viewOffset[0] = RayMatrixTranslate(-device.interpupillaryDistance*0.5f, 0.075f, 0.045f);
+        config.viewOffset[1] = RayMatrixTranslate(device.interpupillaryDistance*0.5f, 0.075f, 0.045f);
 
         // Compute eyes Viewports
         /*
@@ -2559,10 +2559,10 @@ void SetShaderValueV(Shader shader, int locIndex, const void *value, int uniform
 }
 
 // Set shader uniform value (matrix 4x4)
-void SetShaderValueMatrix(Shader shader, int locIndex, Matrix mat)
+void SetShaderValueRayMatrix(Shader shader, int locIndex, RayMatrix mat)
 {
     rlEnableShader(shader.id);
-    rlSetUniformMatrix(locIndex, mat);
+    rlSetUniformRayMatrix(locIndex, mat);
     //rlDisableShader();
 }
 
@@ -2589,20 +2589,20 @@ Ray GetMouseRay(int windowID, Vector2 mouse, Camera camera)
     Vector3 deviceCoords = { x, y, z };
 
     // Calculate view matrix from camera look at
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+    RayMatrix matView = RayMatrixLookAt(camera.position, camera.target, camera.up);
 
-    Matrix matProj = MatrixIdentity();
+    RayMatrix matProj = RayMatrixIdentity();
 
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
         // Calculate projection matrix from perspective
-        // matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        // matProj = RayMatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
 
         //CUSTOM: This is the magic fov that results in 2D == 3D at 1 unit away.
         //The reason for this is because of trigonomitry. Don't ask me why I don't remember.
         //TODO: Make this not so hard coded. 
         float magicFov = 53.1301; 
-        matProj = MatrixPerspective(magicFov * DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        matProj = RayMatrixPerspective(magicFov * DEG2RAD, ((double)GetScreenWidth(windowID)/(double)GetScreenHeight(windowID)), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     }
     else if (camera.projection == CAMERA_ORTHOGRAPHIC)
     {
@@ -2611,7 +2611,7 @@ Ray GetMouseRay(int windowID, Vector2 mouse, Camera camera)
         double right = top*aspect;
 
         // Calculate projection matrix from orthographic
-        matProj = MatrixOrtho(-right, right, -top, top, 0.01, 1000.0);
+        matProj = RayMatrixOrtho(-right, right, -top, top, 0.01, 1000.0);
     }
 
     // Unproject far/near points
@@ -2636,15 +2636,15 @@ Ray GetMouseRay(int windowID, Vector2 mouse, Camera camera)
 }
 
 // Get transform matrix for camera
-Matrix GetCameraMatrix(Camera camera)
+RayMatrix GetCameraRayMatrix(Camera camera)
 {
-    return MatrixLookAt(camera.position, camera.target, camera.up);
+    return RayMatrixLookAt(camera.position, camera.target, camera.up);
 }
 
 // Get camera 2d transform matrix
-Matrix GetCameraMatrix2D(Camera2D camera)
+RayMatrix GetCameraRayMatrix2D(Camera2D camera)
 {
-    Matrix matTransform = { 0 };
+    RayMatrix matTransform = { 0 };
     // The camera in world-space is set by
     //   1. Move it to target
     //   2. Rotate by -rotation and scale by (1/zoom)
@@ -2659,12 +2659,12 @@ Matrix GetCameraMatrix2D(Camera2D camera)
     //   1. Move to offset
     //   2. Rotate and Scale
     //   3. Move by -target
-    Matrix matOrigin = MatrixTranslate(-camera.target.x, -camera.target.y, 0.0f);
-    Matrix matRotation = MatrixRotate((Vector3){ 0.0f, 0.0f, 1.0f }, camera.rotation*DEG2RAD);
-    Matrix matScale = MatrixScale(camera.zoom, camera.zoom, 1.0f);
-    Matrix matTranslation = MatrixTranslate(camera.offset.x, camera.offset.y, 0.0f);
+    RayMatrix matOrigin = RayMatrixTranslate(-camera.target.x, -camera.target.y, 0.0f);
+    RayMatrix matRotation = RayMatrixRotate((Vector3){ 0.0f, 0.0f, 1.0f }, camera.rotation*DEG2RAD);
+    RayMatrix matScale = RayMatrixScale(camera.zoom, camera.zoom, 1.0f);
+    RayMatrix matTranslation = RayMatrixTranslate(camera.offset.x, camera.offset.y, 0.0f);
 
-    matTransform = MatrixMultiply(MatrixMultiply(matOrigin, MatrixMultiply(matScale, matRotation)), matTranslation);
+    matTransform = RayMatrixMultiply(RayMatrixMultiply(matOrigin, RayMatrixMultiply(matScale, matRotation)), matTranslation);
 
     return matTransform;
 }
@@ -2681,12 +2681,12 @@ Vector2 GetWorldToScreen(int windowID, Vector3 position, Camera camera)
 Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int width, int height)
 {
     // Calculate projection matrix (from perspective instead of frustum
-    Matrix matProj = MatrixIdentity();
+    RayMatrix matProj = RayMatrixIdentity();
 
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
         // Calculate projection matrix from perspective
-        matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)width/(double)height), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        matProj = RayMatrixPerspective(camera.fovy*DEG2RAD, ((double)width/(double)height), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     }
     else if (camera.projection == CAMERA_ORTHOGRAPHIC)
     {
@@ -2695,13 +2695,13 @@ Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int wi
         double right = top*aspect;
 
         // Calculate projection matrix from orthographic
-        matProj = MatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+        matProj = RayMatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     }
 
     // Calculate view matrix from camera look at (and transpose it)
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+    RayMatrix matView = RayMatrixLookAt(camera.position, camera.target, camera.up);
 
-    // TODO: Why not use Vector3Transform(Vector3 v, Matrix mat)?
+    // TODO: Why not use Vector3Transform(Vector3 v, RayMatrix mat)?
 
     // Convert world position vector to quaternion
     Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
@@ -2724,7 +2724,7 @@ Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int wi
 // Get the screen space position for a 2d camera world space position
 Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera)
 {
-    Matrix matCamera = GetCameraMatrix2D(camera);
+    RayMatrix matCamera = GetCameraRayMatrix2D(camera);
     Vector3 transform = Vector3Transform((Vector3){ position.x, position.y, 0 }, matCamera);
 
     return (Vector2){ transform.x, transform.y };
@@ -2733,7 +2733,7 @@ Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera)
 // Get the world space position for a 2d camera screen space position
 Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera)
 {
-    Matrix invMatCamera = MatrixInvert(GetCameraMatrix2D(camera));
+    RayMatrix invMatCamera = RayMatrixInvert(GetCameraRayMatrix2D(camera));
     Vector3 transform = Vector3Transform((Vector3){ position.x, position.y, 0 }, invMatCamera);
 
     return (Vector2){ transform.x, transform.y };
@@ -3892,7 +3892,7 @@ static bool InitGraphicsDevice(int windowID, int width, int height)
 {
     CORE.Window[windowID].screen.width = width;            // User desired width
     CORE.Window[windowID].screen.height = height;          // User desired height
-    CORE.Window[windowID].screenScale = MatrixIdentity();  // No draw scaling required by default
+    CORE.Window[windowID].screenScale = RayMatrixIdentity();  // No draw scaling required by default
 
     // NOTE: Framebuffer (render area - CORE.Window[windowID].render.width, CORE.Window[windowID].render.height) could include black bars...
     // ...in top-down or left-right to match display aspect ratio (no weird scalings)
@@ -4199,7 +4199,7 @@ static bool InitGraphicsDevice(int windowID, int width, int height)
         glfwGetFramebufferSize(CORE.Window[windowID].handle, &fbWidth, &fbHeight);
 
         // Screen scaling matrix is required in case desired screen area is different than display area
-        CORE.Window[windowID].screenScale = MatrixScale((float)fbWidth/CORE.Window[windowID].screen.width, (float)fbHeight/CORE.Window[windowID].screen.height, 1.0f);
+        CORE.Window[windowID].screenScale = RayMatrixScale((float)fbWidth/CORE.Window[windowID].screen.width, (float)fbHeight/CORE.Window[windowID].screen.height, 1.0f);
 
         // Mouse input scaling for the new screen size
         //HACK: raylib does not handle the mouse sorry
@@ -4682,14 +4682,14 @@ static void SetupViewport(int windowID, int width, int height)
     rlViewport(CORE.Window[windowID].renderOffset.x/2, CORE.Window[windowID].renderOffset.y/2, CORE.Window[windowID].render.width, CORE.Window[windowID].render.height);
 #endif
 
-    rlMatrixMode(RL_PROJECTION);        // Switch to projection matrix
+    rlRayMatrixMode(RL_PROJECTION);        // Switch to projection matrix
     rlLoadIdentity();                   // Reset current matrix (projection)
 
     // Set orthographic projection to current framebuffer size
     // NOTE: Configured top-left corner as (0, 0)
     rlOrtho(0, CORE.Window[windowID].render.width, CORE.Window[windowID].render.height, 0, 0.0f, 1.0f);
 
-    rlMatrixMode(RL_MODELVIEW);         // Switch back to modelview matrix
+    rlRayMatrixMode(RL_MODELVIEW);         // Switch back to modelview matrix
     rlLoadIdentity();                   // Reset current matrix (modelview)
 }
 
@@ -4723,7 +4723,7 @@ static void SetupFramebuffer(int windowID, int width, int height)
 
         // Screen scaling required
         float scaleRatio = (float)CORE.Window[windowID].render.width/(float)CORE.Window[windowID].screen.width;
-        CORE.Window[windowID].screenScale = MatrixScale(scaleRatio, scaleRatio, 1.0f);
+        CORE.Window[windowID].screenScale = RayMatrixScale(scaleRatio, scaleRatio, 1.0f);
 
         // NOTE: We render to full display resolution!
         // We just need to calculate above parameters for downscale matrix and offsets
