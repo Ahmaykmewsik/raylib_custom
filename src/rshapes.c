@@ -743,7 +743,7 @@ void DrawRectangleGradientEx(RayRectangle rec, Color col1, Color col2, Color col
 {
     rlSetTexture(texShapes.id);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlBegin(RL_QUADS);
             rlNormal3f(0.0f, 0.0f, 1.0f);
 
@@ -764,7 +764,7 @@ void DrawRectangleGradientEx(RayRectangle rec, Color col1, Color col2, Color col
             rlTexCoord2f((texShapesRec.x + texShapesRec.width)/texShapes.width, texShapesRec.y/texShapes.height);
             rlVertex2f(rec.x + rec.width, rec.y);
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 
     rlSetTexture(0);
 }
@@ -1416,7 +1416,7 @@ void DrawPoly(Vector2 center, int sides, float radius, float rotation, Color col
     rlCheckRenderBatchLimit(3*sides);
 #endif
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(center.x, center.y, 0.0f);
         rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
 
@@ -1457,7 +1457,7 @@ void DrawPoly(Vector2 center, int sides, float radius, float rotation, Color col
             }
         rlEnd();
 #endif
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw a polygon outline of n sides
@@ -1468,7 +1468,7 @@ void DrawPolyLines(Vector2 center, int sides, float radius, float rotation, Colo
 
     rlCheckRenderBatchLimit(2*sides);
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(center.x, center.y, 0.0f);
         rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
 
@@ -1482,7 +1482,7 @@ void DrawPolyLines(Vector2 center, int sides, float radius, float rotation, Colo
                 rlVertex2f(sinf(DEG2RAD*centralAngle)*radius, cosf(DEG2RAD*centralAngle)*radius);
             }
         rlEnd();
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 void DrawPolyLinesEx(Vector2 center, int sides, float radius, float rotation, float lineThick, Color color)
@@ -1498,7 +1498,7 @@ void DrawPolyLinesEx(Vector2 center, int sides, float radius, float rotation, fl
     rlCheckRenderBatchLimit(6*sides);
 #endif
 
-    rlPushMatrix();
+    rlPushRayMatrix();
         rlTranslatef(center.x, center.y, 0.0f);
         rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
 
@@ -1544,7 +1544,7 @@ void DrawPolyLinesEx(Vector2 center, int sides, float radius, float rotation, fl
             }
         rlEnd();
 #endif
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 //----------------------------------------------------------------------------------

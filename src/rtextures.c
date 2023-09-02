@@ -3315,7 +3315,7 @@ void DrawTexturePro(Texture2D texture, RayRectangle source, RayRectangle dest, V
         // just in case someone wants to do some performance test
         /*
         rlSetTexture(texture.id);
-        rlPushMatrix();
+        rlPushRayMatrix();
             rlTranslatef(dest.x, dest.y, 0.0f);
             if (rotation != 0.0f) rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
             rlTranslatef(-origin.x, -origin.y, 0.0f);
@@ -3344,7 +3344,7 @@ void DrawTexturePro(Texture2D texture, RayRectangle source, RayRectangle dest, V
                 else rlTexCoord2f((source.x + source.width)/width, source.y/height);
                 rlVertex2f(dest.width, 0.0f);
             rlEnd();
-        rlPopMatrix();
+        rlPopRayMatrix();
         rlSetTexture(0);
         */
     }
@@ -3411,7 +3411,7 @@ void DrawTextureNPatch(Texture2D texture, NPatchInfo nPatchInfo, RayRectangle de
 
         rlSetTexture(texture.id);
 
-        rlPushMatrix();
+        rlPushRayMatrix();
             rlTranslatef(dest.x, dest.y, 0.0f);
             rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
             rlTranslatef(-origin.x, -origin.y, 0.0f);
@@ -3541,7 +3541,7 @@ void DrawTextureNPatch(Texture2D texture, NPatchInfo nPatchInfo, RayRectangle de
                     rlTexCoord2f(coordC.x, coordA.y); rlVertex2f(vertC.x, vertA.y);  // Top-left corner for texture and quad
                 }
             rlEnd();
-        rlPopMatrix();
+        rlPopRayMatrix();
 
         rlSetTexture(0);
     }

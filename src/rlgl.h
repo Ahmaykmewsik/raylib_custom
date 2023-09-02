@@ -2555,7 +2555,7 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
                 matMVP.m8, matMVP.m9, matMVP.m10, matMVP.m11,
                 matMVP.m12, matMVP.m13, matMVP.m14, matMVP.m15
             };
-            glUniformRayMatrix4fv(RLGL[currentContext].State.currentShaderLocs[RL_SHADER_LOC_MATRIX_MVP], 1, false, matMVPfloat);
+            glUniformMatrix4fv(RLGL[currentContext].State.currentShaderLocs[RL_SHADER_LOC_MATRIX_MVP], 1, false, matMVPfloat);
 
             if (RLGL[currentContext].ExtSupported.vao) glBindVertexArray(batch->vertexBuffer[batch->currentBuffer].vaoId);
             else
@@ -3833,7 +3833,7 @@ void rlSetUniformRayMatrix(int locIndex, RayMatrix mat)
         mat.m8, mat.m9, mat.m10, mat.m11,
         mat.m12, mat.m13, mat.m14, mat.m15
     };
-    glUniformRayMatrix4fv(locIndex, 1, false, matfloat);
+    glUniformMatrix4fv(locIndex, 1, false, matfloat);
 #endif
 }
 

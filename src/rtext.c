@@ -905,7 +905,7 @@ void RayDrawTextEx(RayFont font, const char *text, Vector2 position, float fontS
 // Draw text using RayFont and pro parameters (rotation)
 void DrawTextPro(RayFont font, const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint)
 {
-    rlPushMatrix();
+    rlPushRayMatrix();
 
         rlTranslatef(position.x, position.y, 0.0f);
         rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
@@ -913,7 +913,7 @@ void DrawTextPro(RayFont font, const char *text, Vector2 position, Vector2 origi
 
         RayDrawTextEx(font, text, (Vector2){ 0.0f, 0.0f }, fontSize, spacing, tint);
 
-    rlPopMatrix();
+    rlPopRayMatrix();
 }
 
 // Draw one character (codepoint)

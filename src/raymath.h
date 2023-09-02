@@ -1,6 +1,6 @@
 /**********************************************************************************************
 *
-*   raymath v1.5 - Math functions to work with Vector2, Vector3, RayMatrix and Quaternions
+*   raymath v1.5 - Math functions to work with Vector2, Vector3, RayMatrix and RayQuaternions
 *
 *   CONFIGURATION:
 *
@@ -129,8 +129,8 @@ typedef struct Vector4 {
 #endif
 
 #if !defined(RL_QUATERNION_TYPE)
-// Quaternion type
-typedef Vector4 Quaternion;
+// RayQuaternion type
+typedef Vector4 RayQuaternion;
 #define RL_QUATERNION_TYPE
 #endif
 
@@ -630,7 +630,7 @@ RMAPI Vector3 Vector3Transform(Vector3 v, RayMatrix mat)
 }
 
 // Transform a vector by quaternion rotation
-RMAPI Vector3 Vector3RotateByQuaternion(Vector3 v, Quaternion q)
+RMAPI Vector3 Vector3RotateByRayQuaternion(Vector3 v, RayQuaternion q)
 {
     Vector3 result = { 0 };
 
@@ -786,10 +786,10 @@ RMAPI Vector3 Vector3Unproject(Vector3 source, RayMatrix projection, RayMatrix v
         (a20*b03 - a21*b01 + a22*b00)*invDet };
 
     // Create quaternion from source point
-    Quaternion quat = { source.x, source.y, source.z, 1.0f };
+    RayQuaternion quat = { source.x, source.y, source.z, 1.0f };
 
     // Multiply quat point by unproject matrix
-    Quaternion qtransformed = {     // QuaternionTransform(quat, matViewProjInv)
+    RayQuaternion qtransformed = {     // RayQuaternionTransform(quat, matViewProjInv)
         matViewProjInv.m0*quat.x + matViewProjInv.m4*quat.y + matViewProjInv.m8*quat.z + matViewProjInv.m12*quat.w,
         matViewProjInv.m1*quat.x + matViewProjInv.m5*quat.y + matViewProjInv.m9*quat.z + matViewProjInv.m13*quat.w,
         matViewProjInv.m2*quat.x + matViewProjInv.m6*quat.y + matViewProjInv.m10*quat.z + matViewProjInv.m14*quat.w,
@@ -1414,51 +1414,51 @@ RMAPI bool RayMatrixIsNull(RayMatrix mat)
 }
 
 //----------------------------------------------------------------------------------
-// Module Functions Definition - Quaternion math
+// Module Functions Definition - RayQuaternion math
 //----------------------------------------------------------------------------------
 
 // Add two quaternions
-RMAPI Quaternion QuaternionAdd(Quaternion q1, Quaternion q2)
+RMAPI RayQuaternion RayQuaternionAdd(RayQuaternion q1, RayQuaternion q2)
 {
-    Quaternion result = {q1.x + q2.x, q1.y + q2.y, q1.z + q2.z, q1.w + q2.w};
+    RayQuaternion result = {q1.x + q2.x, q1.y + q2.y, q1.z + q2.z, q1.w + q2.w};
 
     return result;
 }
 
 // Add quaternion and float value
-RMAPI Quaternion QuaternionAddValue(Quaternion q, float add)
+RMAPI RayQuaternion RayQuaternionAddValue(RayQuaternion q, float add)
 {
-    Quaternion result = {q.x + add, q.y + add, q.z + add, q.w + add};
+    RayQuaternion result = {q.x + add, q.y + add, q.z + add, q.w + add};
 
     return result;
 }
 
 // Subtract two quaternions
-RMAPI Quaternion QuaternionSubtract(Quaternion q1, Quaternion q2)
+RMAPI RayQuaternion RayQuaternionSubtract(RayQuaternion q1, RayQuaternion q2)
 {
-    Quaternion result = {q1.x - q2.x, q1.y - q2.y, q1.z - q2.z, q1.w - q2.w};
+    RayQuaternion result = {q1.x - q2.x, q1.y - q2.y, q1.z - q2.z, q1.w - q2.w};
 
     return result;
 }
 
 // Subtract quaternion and float value
-RMAPI Quaternion QuaternionSubtractValue(Quaternion q, float sub)
+RMAPI RayQuaternion RayQuaternionSubtractValue(RayQuaternion q, float sub)
 {
-    Quaternion result = {q.x - sub, q.y - sub, q.z - sub, q.w - sub};
+    RayQuaternion result = {q.x - sub, q.y - sub, q.z - sub, q.w - sub};
 
     return result;
 }
 
 // Get identity quaternion
-RMAPI Quaternion QuaternionIdentity(void)
+RMAPI RayQuaternion RayQuaternionIdentity(void)
 {
-    Quaternion result = { 0.0f, 0.0f, 0.0f, 1.0f };
+    RayQuaternion result = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     return result;
 }
 
 // Computes the length of a quaternion
-RMAPI float QuaternionLength(Quaternion q)
+RMAPI float RayQuaternionLength(RayQuaternion q)
 {
     float result = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
 
@@ -1466,9 +1466,9 @@ RMAPI float QuaternionLength(Quaternion q)
 }
 
 // Normalize provided quaternion
-RMAPI Quaternion QuaternionNormalize(Quaternion q)
+RMAPI RayQuaternion RayQuaternionNormalize(RayQuaternion q)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     float length = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
     if (length == 0.0f) length = 1.0f;
@@ -1483,9 +1483,9 @@ RMAPI Quaternion QuaternionNormalize(Quaternion q)
 }
 
 // Invert provided quaternion
-RMAPI Quaternion QuaternionInvert(Quaternion q)
+RMAPI RayQuaternion RayQuaternionInvert(RayQuaternion q)
 {
-    Quaternion result = q;
+    RayQuaternion result = q;
 
     float length = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
     float lengthSq = length*length;
@@ -1504,9 +1504,9 @@ RMAPI Quaternion QuaternionInvert(Quaternion q)
 }
 
 // Calculate two quaternion multiplication
-RMAPI Quaternion QuaternionMultiply(Quaternion q1, Quaternion q2)
+RMAPI RayQuaternion RayQuaternionMultiply(RayQuaternion q1, RayQuaternion q2)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     float qax = q1.x, qay = q1.y, qaz = q1.z, qaw = q1.w;
     float qbx = q2.x, qby = q2.y, qbz = q2.z, qbw = q2.w;
@@ -1520,9 +1520,9 @@ RMAPI Quaternion QuaternionMultiply(Quaternion q1, Quaternion q2)
 }
 
 // Scale quaternion by float value
-RMAPI Quaternion QuaternionScale(Quaternion q, float mul)
+RMAPI RayQuaternion RayQuaternionScale(RayQuaternion q, float mul)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     float qax = q.x, qay = q.y, qaz = q.z, qaw = q.w;
 
@@ -1535,17 +1535,17 @@ RMAPI Quaternion QuaternionScale(Quaternion q, float mul)
 }
 
 // Divide two quaternions
-RMAPI Quaternion QuaternionDivide(Quaternion q1, Quaternion q2)
+RMAPI RayQuaternion RayQuaternionDivide(RayQuaternion q1, RayQuaternion q2)
 {
-    Quaternion result = { q1.x/q2.x, q1.y/q2.y, q1.z/q2.z, q1.w/q2.w };
+    RayQuaternion result = { q1.x/q2.x, q1.y/q2.y, q1.z/q2.z, q1.w/q2.w };
 
     return result;
 }
 
 // Calculate linear interpolation between two quaternions
-RMAPI Quaternion QuaternionLerp(Quaternion q1, Quaternion q2, float amount)
+RMAPI RayQuaternion RayQuaternionLerp(RayQuaternion q1, RayQuaternion q2, float amount)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     result.x = q1.x + amount*(q2.x - q1.x);
     result.y = q1.y + amount*(q2.y - q1.y);
@@ -1556,18 +1556,18 @@ RMAPI Quaternion QuaternionLerp(Quaternion q1, Quaternion q2, float amount)
 }
 
 // Calculate slerp-optimized interpolation between two quaternions
-RMAPI Quaternion QuaternionNlerp(Quaternion q1, Quaternion q2, float amount)
+RMAPI RayQuaternion RayQuaternionNlerp(RayQuaternion q1, RayQuaternion q2, float amount)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
-    // QuaternionLerp(q1, q2, amount)
+    // RayQuaternionLerp(q1, q2, amount)
     result.x = q1.x + amount*(q2.x - q1.x);
     result.y = q1.y + amount*(q2.y - q1.y);
     result.z = q1.z + amount*(q2.z - q1.z);
     result.w = q1.w + amount*(q2.w - q1.w);
 
-    // QuaternionNormalize(q);
-    Quaternion q = result;
+    // RayQuaternionNormalize(q);
+    RayQuaternion q = result;
     float length = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
     if (length == 0.0f) length = 1.0f;
     float ilength = 1.0f/length;
@@ -1581,9 +1581,9 @@ RMAPI Quaternion QuaternionNlerp(Quaternion q1, Quaternion q2, float amount)
 }
 
 // Calculates spherical linear interpolation between two quaternions
-RMAPI Quaternion QuaternionSlerp(Quaternion q1, Quaternion q2, float amount)
+RMAPI RayQuaternion RayQuaternionSlerp(RayQuaternion q1, RayQuaternion q2, float amount)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     float cosHalfTheta = q1.x*q2.x + q1.y*q2.y + q1.z*q2.z + q1.w*q2.w;
 
@@ -1594,7 +1594,7 @@ RMAPI Quaternion QuaternionSlerp(Quaternion q1, Quaternion q2, float amount)
     }
 
     if (fabs(cosHalfTheta) >= 1.0f) result = q1;
-    else if (cosHalfTheta > 0.95f) result = QuaternionNlerp(q1, q2, amount);
+    else if (cosHalfTheta > 0.95f) result = RayQuaternionNlerp(q1, q2, amount);
     else
     {
         float halfTheta = acosf(cosHalfTheta);
@@ -1623,9 +1623,9 @@ RMAPI Quaternion QuaternionSlerp(Quaternion q1, Quaternion q2, float amount)
 }
 
 // Calculate quaternion based on the rotation from one vector to another
-RMAPI Quaternion QuaternionFromVector3ToVector3(Vector3 from, Vector3 to)
+RMAPI RayQuaternion RayQuaternionFromVector3ToVector3(Vector3 from, Vector3 to)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     float cos2Theta = (from.x*to.x + from.y*to.y + from.z*to.z);    // Vector3DotProduct(from, to)
     Vector3 cross = { from.y*to.z - from.z*to.y, from.z*to.x - from.x*to.z, from.x*to.y - from.y*to.x }; // Vector3CrossProduct(from, to)
@@ -1635,9 +1635,9 @@ RMAPI Quaternion QuaternionFromVector3ToVector3(Vector3 from, Vector3 to)
     result.z = cross.z;
     result.w = 1.0f + cos2Theta;
 
-    // QuaternionNormalize(q);
+    // RayQuaternionNormalize(q);
     // NOTE: Normalize to essentially nlerp the original and identity to 0.5
-    Quaternion q = result;
+    RayQuaternion q = result;
     float length = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
     if (length == 0.0f) length = 1.0f;
     float ilength = 1.0f/length;
@@ -1651,9 +1651,9 @@ RMAPI Quaternion QuaternionFromVector3ToVector3(Vector3 from, Vector3 to)
 }
 
 // Get a quaternion for a given rotation matrix
-RMAPI Quaternion QuaternionFromRayMatrix(RayMatrix mat)
+RMAPI RayQuaternion RayQuaternionFromRayMatrix(RayMatrix mat)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     if ((mat.m0 > mat.m5) && (mat.m0 > mat.m10))
     {
@@ -1685,7 +1685,7 @@ RMAPI Quaternion QuaternionFromRayMatrix(RayMatrix mat)
 }
 
 // Get a matrix for a given quaternion
-RMAPI RayMatrix QuaternionToRayMatrix(Quaternion q)
+RMAPI RayMatrix RayQuaternionToRayMatrix(RayQuaternion q)
 {
     RayMatrix result = { 1.0f, 0.0f, 0.0f, 0.0f,
                       0.0f, 1.0f, 0.0f, 0.0f,
@@ -1719,9 +1719,9 @@ RMAPI RayMatrix QuaternionToRayMatrix(Quaternion q)
 
 // Get rotation quaternion for an angle and axis
 // NOTE: angle must be provided in radians
-RMAPI Quaternion QuaternionFromAxisAngle(Vector3 axis, float angle)
+RMAPI RayQuaternion RayQuaternionFromAxisAngle(Vector3 axis, float angle)
 {
-    Quaternion result = { 0.0f, 0.0f, 0.0f, 1.0f };
+    RayQuaternion result = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     float axisLength = sqrtf(axis.x*axis.x + axis.y*axis.y + axis.z*axis.z);
 
@@ -1749,8 +1749,8 @@ RMAPI Quaternion QuaternionFromAxisAngle(Vector3 axis, float angle)
         result.z = axis.z*sinres;
         result.w = cosres;
 
-        // QuaternionNormalize(q);
-        Quaternion q = result;
+        // RayQuaternionNormalize(q);
+        RayQuaternion q = result;
         length = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
         if (length == 0.0f) length = 1.0f;
         ilength = 1.0f/length;
@@ -1764,11 +1764,11 @@ RMAPI Quaternion QuaternionFromAxisAngle(Vector3 axis, float angle)
 }
 
 // Get the rotation angle and axis for a given quaternion
-RMAPI void QuaternionToAxisAngle(Quaternion q, Vector3 *outAxis, float *outAngle)
+RMAPI void RayQuaternionToAxisAngle(RayQuaternion q, Vector3 *outAxis, float *outAngle)
 {
     if (fabs(q.w) > 1.0f)
     {
-        // QuaternionNormalize(q);
+        // RayQuaternionNormalize(q);
         float length = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
         if (length == 0.0f) length = 1.0f;
         float ilength = 1.0f/length;
@@ -1802,9 +1802,9 @@ RMAPI void QuaternionToAxisAngle(Quaternion q, Vector3 *outAxis, float *outAngle
 
 // Get the quaternion equivalent to Euler angles
 // NOTE: Rotation order is ZYX
-RMAPI Quaternion QuaternionFromEuler(float pitch, float yaw, float roll)
+RMAPI RayQuaternion RayQuaternionFromEuler(float pitch, float yaw, float roll)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     float x0 = cosf(pitch*0.5f);
     float x1 = sinf(pitch*0.5f);
@@ -1823,7 +1823,7 @@ RMAPI Quaternion QuaternionFromEuler(float pitch, float yaw, float roll)
 
 // Get the Euler angles equivalent to quaternion (roll, pitch, yaw)
 // NOTE: Angles are returned in a Vector3 struct in radians
-RMAPI Vector3 QuaternionToEuler(Quaternion q)
+RMAPI Vector3 RayQuaternionToEuler(RayQuaternion q)
 {
     Vector3 result = { 0 };
 
@@ -1847,9 +1847,9 @@ RMAPI Vector3 QuaternionToEuler(Quaternion q)
 }
 
 // Transform a quaternion given a transformation matrix
-RMAPI Quaternion QuaternionTransform(Quaternion q, RayMatrix mat)
+RMAPI RayQuaternion RayQuaternionTransform(RayQuaternion q, RayMatrix mat)
 {
-    Quaternion result = { 0 };
+    RayQuaternion result = { 0 };
 
     result.x = mat.m0*q.x + mat.m4*q.y + mat.m8*q.z + mat.m12*q.w;
     result.y = mat.m1*q.x + mat.m5*q.y + mat.m9*q.z + mat.m13*q.w;

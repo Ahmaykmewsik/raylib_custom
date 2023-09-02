@@ -15,7 +15,7 @@
 *       - Flexible Materials system, supporting classic maps and PBR maps
 *       - Animated 3D models supported (skeletal bones animation) (IQM)
 *       - Shaders support, including Model shaders and Postprocessing shaders
-*       - Powerful math module for Vector, Matrix and Quaternion operations: [raymath]
+*       - Powerful math module for Vector, Matrix and RayQuaternion operations: [raymath]
 *       - Audio loading and playing with streaming support (WAV, OGG, MP3, FLAC, XM, MOD)
 *       - VR stereo rendering with configurable HMD device parameters
 *       - Bindings to multiple programming languages available!
@@ -207,8 +207,8 @@ typedef struct Vector4 {
     float w;                // Vector w component
 } Vector4;
 
-// Quaternion, 4 components (Vector4 alias)
-typedef Vector4 Quaternion;
+// RayQuaternion, 4 components (Vector4 alias)
+typedef Vector4 RayQuaternion;
 
 // Matrix, 4x4 components, column major, OpenGL style, right handed
 typedef struct RayMatrix {
@@ -366,7 +366,7 @@ typedef struct Material {
 // Transform, vectex transformation data
 typedef struct Transform {
     Vector3 translation;    // Translation
-    Quaternion rotation;    // Rotation
+    RayQuaternion rotation;    // Rotation
     Vector3 scale;          // Scale
 } Transform;
 

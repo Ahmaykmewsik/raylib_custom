@@ -86,7 +86,7 @@
 *
 *   DEPENDENCIES:
 *       rglfw    - Manage graphic device, OpenGL context and inputs on PLATFORM_DESKTOP (Windows, Linux, OSX. FreeBSD, OpenBSD, NetBSD, DragonFly)
-*       raymath  - 3D math functionality (Vector2, Vector3, Matrix, Quaternion)
+*       raymath  - 3D math functionality (Vector2, Vector3, Matrix, RayQuaternion)
 *       camera   - Multiple 3D camera modes (free, orbital, 1st person, 3rd person)
 *       gestures - Gestures system for touch-ready devices (or simulated from mouse inputs)
 *
@@ -128,7 +128,7 @@
 #include "rlgl.h"                   // OpenGL abstraction layer to OpenGL 1.1, 3.3+ or ES2
 
 #define RAYMATH_IMPLEMENTATION      // Define external out-of-line implementation
-#include "raymath.h"                // Vector3, Quaternion and Matrix functionality
+#include "raymath.h"                // Vector3, RayQuaternion and Matrix functionality
 
 #if defined(SUPPORT_GESTURES_SYSTEM)
     #define GESTURES_IMPLEMENTATION
@@ -2704,13 +2704,13 @@ Vector2 GetWorldToScreenEx(int windowID, Vector3 position, Camera camera, int wi
     // TODO: Why not use Vector3Transform(Vector3 v, RayMatrix mat)?
 
     // Convert world position vector to quaternion
-    Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
+    RayQuaternion worldPos = { position.x, position.y, position.z, 1.0f };
 
     // Transform world position to view
-    worldPos = QuaternionTransform(worldPos, matView);
+    worldPos = RayQuaternionTransform(worldPos, matView);
 
     // Transform result to projection (clip space position)
-    worldPos = QuaternionTransform(worldPos, matProj);
+    worldPos = RayQuaternionTransform(worldPos, matProj);
 
     // Calculate normalized device coordinates (inverted y)
     Vector3 ndcPos = { worldPos.x/worldPos.w, -worldPos.y/worldPos.w, worldPos.z/worldPos.w };

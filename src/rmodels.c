@@ -47,7 +47,7 @@
 
 #include "utils.h"          // Required for: TRACELOG(), LoadFileData(), LoadFileText(), SaveFileText()
 #include "rlgl.h"           // OpenGL abstraction layer to OpenGL 1.1, 2.1, 3.3+ or ES2
-#include "raymath.h"        // Required for: Vector3, Quaternion and RayMatrix functionality
+#include "raymath.h"        // Required for: Vector3, RayQuaternion and RayMatrix functionality
 
 #include <stdio.h>          // Required for: sprintf()
 #include <stdlib.h>         // Required for: malloc(), free()
@@ -1847,11 +1847,11 @@ void UpdateModelAnimation(Model model, ModelAnimation anim, int frame)
             Vector3 animNormal = { 0 };
 
             Vector3 inTranslation = { 0 };
-            Quaternion inRotation = { 0 };
+            RayQuaternion inRotation = { 0 };
             // Vector3 inScale = { 0 };
 
             Vector3 outTranslation = { 0 };
-            Quaternion outRotation = { 0 };
+            RayQuaternion outRotation = { 0 };
             Vector3 outScale = { 0 };
 
             int boneId = 0;
@@ -1895,7 +1895,7 @@ void UpdateModelAnimation(Model model, ModelAnimation anim, int frame)
                     animVertex = (Vector3){ mesh.vertices[vCounter], mesh.vertices[vCounter + 1], mesh.vertices[vCounter + 2] };
                     animVertex = Vector3Multiply(animVertex, outScale);
                     animVertex = Vector3Subtract(animVertex, inTranslation);
-                    animVertex = Vector3RotateByQuaternion(animVertex, QuaternionMultiply(outRotation, QuaternionInvert(inRotation)));
+                    animVertex = Vector3RotateByRayQuaternion(animVertex, RayQuaternionMultiply(outRotation, RayQuaternionInvert(inRotation)));
                     animVertex = Vector3Add(animVertex, outTranslation);
 //                     animVertex = Vector3Transform(animVertex, model.transform);
                     mesh.animVertices[vCounter] += animVertex.x*boneWeight;
@@ -1908,7 +1908,7 @@ void UpdateModelAnimation(Model model, ModelAnimation anim, int frame)
                     if (mesh.normals != NULL)
                     {
                         animNormal = (Vector3){ mesh.normals[vCounter], mesh.normals[vCounter + 1], mesh.normals[vCounter + 2] };
-                        animNormal = Vector3RotateByQuaternion(animNormal, QuaternionMultiply(outRotation, QuaternionInvert(inRotation)));
+                        animNormal = Vector3RotateByRayQuaternion(animNormal, RayQuaternionMultiply(outRotation, RayQuaternionInvert(inRotation)));
                         mesh.animNormals[vCounter] += animNormal.x*boneWeight;
                         mesh.animNormals[vCounter + 1] += animNormal.y*boneWeight;
                         mesh.animNormals[vCounter + 2] += animNormal.z*boneWeight;
@@ -4275,8 +4275,8 @@ static Model LoadIQM(const char *fileName)
     {
         if (model.bones[i].parent >= 0)
         {
-            model.bindPose[i].rotation = QuaternionMultiply(model.bindPose[model.bones[i].parent].rotation, model.bindPose[i].rotation);
-            model.bindPose[i].translation = Vector3RotateByQuaternion(model.bindPose[i].translation, model.bindPose[model.bones[i].parent].rotation);
+            model.bindPose[i].rotation = RayQuaternionMultiply(model.bindPose[model.bones[i].parent].rotation, model.bindPose[i].rotation);
+            model.bindPose[i].translation = Vector3RotateByRayQuaternion(model.bindPose[i].translation, model.bindPose[model.bones[i].parent].rotation);
             model.bindPose[i].translation = Vector3Add(model.bindPose[i].translation, model.bindPose[model.bones[i].parent].translation);
             model.bindPose[i].scale = Vector3Multiply(model.bindPose[i].scale, model.bindPose[model.bones[i].parent].scale);
         }
@@ -4479,7 +4479,7 @@ static ModelAnimation* LoadModelAnimationsIQM(const char *fileName, unsigned int
                     dcounter++;
                 }
 
-                animations[a].framePoses[frame][i].rotation = QuaternionNormalize(animations[a].framePoses[frame][i].rotation);
+                animations[a].framePoses[frame][i].rotation = RayQuaternionNormalize(animations[a].framePoses[frame][i].rotation);
             }
         }
 
@@ -4490,8 +4490,8 @@ static ModelAnimation* LoadModelAnimationsIQM(const char *fileName, unsigned int
             {
                 if (animations[a].bones[i].parent >= 0)
                 {
-                    animations[a].framePoses[frame][i].rotation = QuaternionMultiply(animations[a].framePoses[frame][animations[a].bones[i].parent].rotation, animations[a].framePoses[frame][i].rotation);
-                    animations[a].framePoses[frame][i].translation = Vector3RotateByQuaternion(animations[a].framePoses[frame][i].translation, animations[a].framePoses[frame][animations[a].bones[i].parent].rotation);
+                    animations[a].framePoses[frame][i].rotation = RayQuaternionMultiply(animations[a].framePoses[frame][animations[a].bones[i].parent].rotation, animations[a].framePoses[frame][i].rotation);
+                    animations[a].framePoses[frame][i].translation = Vector3RotateByRayQuaternion(animations[a].framePoses[frame][i].translation, animations[a].framePoses[frame][animations[a].bones[i].parent].rotation);
                     animations[a].framePoses[frame][i].translation = Vector3Add(animations[a].framePoses[frame][i].translation, animations[a].framePoses[frame][animations[a].bones[i].parent].translation);
                     animations[a].framePoses[frame][i].scale = Vector3Multiply(animations[a].framePoses[frame][i].scale, animations[a].framePoses[frame][animations[a].bones[i].parent].scale);
                 }
