@@ -1563,7 +1563,7 @@ void rlTextureParameters(unsigned int id, int param, int value)
 // Enable shader program
 void rlEnableShader(unsigned int id)
 {
-    Assert(!id);
+    Assert(id);
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2))
     glUseProgram(id);
 #endif

@@ -1990,7 +1990,7 @@ void DisableCursor(int windowID)
 bool IsCursorOnScreen(int windowID)
 {
     //[CUSTOM] Mouse position must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
 
     for (int i = 0; i < CORE.numWindows; i++)
     {
@@ -2010,7 +2010,7 @@ void ClearBackground(Color color)
 // Setup canvas (framebuffer) to start drawing
 void BeginDrawing(unsigned int windowID)
 {
-    Assert(isDrawingDirectlyIntoWindow);
+    Assert(!isDrawingDirectlyIntoWindow);
     isDrawingDirectlyIntoWindow = true;
 
     // WARNING: Previously to BeginDrawing() other render textures drawing could happen,
@@ -2034,7 +2034,7 @@ void BeginDrawing(unsigned int windowID)
 // End canvas drawing and swap buffers (double buffering)
 void EndDrawing(int windowID)
 {
-    Assert(!isDrawingDirectlyIntoWindow);
+    Assert(isDrawingDirectlyIntoWindow);
     isDrawingDirectlyIntoWindow = false;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
@@ -2151,8 +2151,8 @@ void EndDrawing(int windowID)
 // Initialize 2D mode with custom camera (2D)
 void BeginMode2D(int windowID, Camera2D camera)
 {
-    Assert(isDrawing2D);
-    Assert(isDrawing3D);
+    Assert(!isDrawing2D);
+    Assert(!isDrawing3D);
     isDrawing2D = true;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
@@ -2169,8 +2169,8 @@ void BeginMode2D(int windowID, Camera2D camera)
 // Ends 2D mode with custom camera
 void EndMode2D(int windowID)
 {
-    Assert(!isDrawing2D);
-    Assert(isDrawing3D);
+    Assert(isDrawing2D);
+    Assert(!isDrawing3D);
     isDrawing2D = false;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
@@ -2182,8 +2182,8 @@ void EndMode2D(int windowID)
 // Initializes 3D mode with custom camera (3D)
 void BeginMode3D(int windowID, Camera3D camera)
 {
-    Assert(isDrawing3D);
-    Assert(isDrawing2D);
+    Assert(!isDrawing2D);
+    Assert(!isDrawing3D);
     isDrawing3D = true;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
@@ -2226,8 +2226,8 @@ void BeginMode3D(int windowID, Camera3D camera)
 // Ends 3D mode and returns to default 2D orthographic mode
 void EndMode3D(int windowID)
 {
-    // Assert(!isDrawing3D);
-    // Assert(isDrawing2D);
+    Assert(!isDrawing2D);
+    Assert(isDrawing3D);
     isDrawing3D = false;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
@@ -2246,8 +2246,7 @@ void EndMode3D(int windowID)
 // Initializes render texture for drawing
 void BeginTextureMode(int windowID, RenderTexture2D target)
 {
-    // Assert(isDrawingDirectlyIntoWindow);
-    Assert(isDrawingIntoTexture);
+    Assert(!isDrawingDirectlyIntoWindow);
     isDrawingIntoTexture = true;
 
     // All Render Textures are required to be created on context 0
@@ -2281,8 +2280,7 @@ void BeginTextureMode(int windowID, RenderTexture2D target)
 // Ends drawing to render texture
 void EndTextureMode(int windowID)
 {
-    // Assert(isDrawingDirectlyIntoWindow);
-    // Assert(!isDrawingIntoTexture);
+    Assert(isDrawingDirectlyIntoWindow);
     isDrawingIntoTexture = false;
 
     // All Render Textures are required to be created on context 0
@@ -2329,8 +2327,8 @@ void EndBlendMode(void)
 // NOTE: Scissor rec refers to bottom-left corner, we change it to upper-left
 void BeginScissorMode(int windowID, int x, int y, int width, int height)
 {
-    // Assert(isScissoring);
-    // isScissoring = true;
+    Assert(!isScissoring);
+    isScissoring = true;
 
     rlDrawRenderBatchActive();      // Update and draw internal render batch
 
@@ -2351,8 +2349,9 @@ void BeginScissorMode(int windowID, int x, int y, int width, int height)
 // End scissor mode
 void EndScissorMode(void)
 {
-    // Assert(!isScissoring);
-    // isScissoring = false;
+    Assert(isScissoring);
+    isScissoring = false;
+
     rlDrawRenderBatchActive();      // Update and draw internal render batch
     rlDisableScissorTest();
 }
@@ -3703,7 +3702,7 @@ bool IsMouseButtonUp(int button)
 int GetMouseX(int windowID)
 {
     //[CUSTOM] Mouse position must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
 #if defined(PLATFORM_ANDROID)
     return (int)CORE.Input.Touch.position[0].x;
 #else
@@ -3715,7 +3714,7 @@ int GetMouseX(int windowID)
 int GetMouseY(int windowID)
 {
     //[CUSTOM] Mouse position must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
 #if defined(PLATFORM_ANDROID)
     return (int)CORE.Input.Touch.position[0].y;
 #else
@@ -3727,7 +3726,7 @@ int GetMouseY(int windowID)
 Vector2 GetMousePosition(int windowID)
 {
     //[CUSTOM] Mouse position must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
     Vector2 position = { 0 };
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB)
@@ -3766,7 +3765,7 @@ void SetMousePosition(int windowID, int x, int y)
 void SetMouseOffset(int offsetX, int offsetY)
 {
     //[CUSTOM] Mouse position must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
     CORE.Input.Mouse.offset = (Vector2){ (float)offsetX, (float)offsetY };
 }
 
@@ -3775,7 +3774,7 @@ void SetMouseOffset(int offsetX, int offsetY)
 void SetMouseScale(float scaleX, float scaleY)
 {
     //[CUSTOM] Mouse must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
     CORE.Input.Mouse.scale = (Vector2){ scaleX, scaleY };
 }
 
@@ -3797,7 +3796,7 @@ float GetMouseWheelMove(void)
 void SetMouseCursor(int windowID, int cursor)
 {
     //[CUSTOM] Mouse must be handled externally in platform layer
-    Assert(1);
+    InvalidCodePath
 #if defined(PLATFORM_DESKTOP)
     CORE.Input.Mouse.cursor = cursor;
     if (cursor == MOUSE_CURSOR_DEFAULT) glfwSetCursor(CORE.Window[windowID].handle, NULL);

@@ -1192,7 +1192,7 @@ void UpdateMeshBuffer(Mesh mesh, int index, void *data, int dataSize, int offset
 void DrawMesh(Mesh mesh, Material material, RayMatrix transform)
 {
     //Meshes MUST belong to the current context!
-    Assert(mesh.windowID != GetCurrentContext());
+    Assert(mesh.windowID == GetCurrentContext());
     
 #if defined(GRAPHICS_API_OPENGL_11)
     #define GL_VERTEX_ARRAY         0x8074

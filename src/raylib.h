@@ -898,16 +898,21 @@ typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);     // F
 // Ahmaykmewsik's Custom Fun World of Fun Times 
 //------------------------------------------------------------------------------------
 
+#if __clang__
+#pragma clang diagnostic ignored "-Wnull-dereference"
+#pragma clang diagnostic ignored "-Wstring-plus-int"
+#endif
+
 #if !defined(Assert)
 #define Assert(expression) \
-    if (!!(expression))      \
+    if (!(expression))      \
     {                      \
         *(int *)0 = 0;     \
     }
 #endif
 
 #if !defined(InvalidCodePath)
-#define InvalidCodePath Assert(1);
+#define InvalidCodePath Assert(!"InvalidCodePath");
 #endif
 
 #define UnimplementedCodePath InvalidCodePath 
