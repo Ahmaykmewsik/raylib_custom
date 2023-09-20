@@ -137,7 +137,7 @@
 
 #if defined(SUPPORT_CAMERA_SYSTEM)
     #define CAMERA_IMPLEMENTATION
-    #include "rcamera.h"             // Camera system functionality
+    // #include "rcamera.h"             // Camera system functionality
 #endif
 
 #if defined(SUPPORT_GIF_RECORDING)
@@ -725,9 +725,13 @@ void InitWindow(int windowID, int width, int height, const char *title)
     CORE.Window[windowID].contextIndex = windowID;
 
     // Initialize required global values different than 0
+    //HACK: GUTTED OUT LIKE A FUCKING FISH
+#if 0
     CORE.Input.Keyboard.exitKey = KEY_ESCAPE;
-    CORE.Input.Mouse.scale = (Vector2){ 1.0f, 1.0f };
     CORE.Input.Mouse.cursor = MOUSE_CURSOR_ARROW;
+#endif
+
+    CORE.Input.Mouse.scale = (Vector2){ 1.0f, 1.0f };
     CORE.Input.Gamepad.lastButtonPressed = -1;
 
 #if defined(PLATFORM_ANDROID)
@@ -3453,8 +3457,11 @@ void OpenURL(const char *url)
 // Module Functions Definition - Input (Keyboard, Mouse, Gamepad) Functions
 //----------------------------------------------------------------------------------
 // Check if a key has been pressed once
-bool IsKeyPressed(int key)
+bool RayIsKeyPressed(int key)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     bool pressed = false;
 
     if ((CORE.Input.Keyboard.previousKeyState[key] == 0) && (CORE.Input.Keyboard.currentKeyState[key] == 1)) pressed = true;
@@ -3463,8 +3470,11 @@ bool IsKeyPressed(int key)
 }
 
 // Check if a key is being pressed (key held down)
-bool IsKeyDown(int key)
+bool RayIsKeyDown(int key)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     if (CORE.Input.Keyboard.currentKeyState[key] == 1) return true;
     else return false;
 }
@@ -3472,6 +3482,9 @@ bool IsKeyDown(int key)
 // Check if a key has been released once
 bool IsKeyReleased(int key)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     bool released = false;
 
     if ((CORE.Input.Keyboard.previousKeyState[key] == 1) && (CORE.Input.Keyboard.currentKeyState[key] == 0)) released = true;
@@ -3482,6 +3495,9 @@ bool IsKeyReleased(int key)
 // Check if a key is NOT being pressed (key not held down)
 bool IsKeyUp(int key)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     if (CORE.Input.Keyboard.currentKeyState[key] == 0) return true;
     else return false;
 }
@@ -3656,6 +3672,9 @@ int SetGamepadMappings(const char *mappings)
 // Check if a mouse button has been pressed once
 bool IsMouseButtonPressed(int button)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     bool pressed = false;
 
     if ((CORE.Input.Mouse.currentButtonState[button] == 1) && (CORE.Input.Mouse.previousButtonState[button] == 0)) pressed = true;
@@ -3669,6 +3688,9 @@ bool IsMouseButtonPressed(int button)
 // Check if a mouse button is being pressed
 bool IsMouseButtonDown(int button)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     bool down = false;
 
     if (CORE.Input.Mouse.currentButtonState[button] == 1) down = true;
@@ -3682,6 +3704,9 @@ bool IsMouseButtonDown(int button)
 // Check if a mouse button has been released once
 bool IsMouseButtonReleased(int button)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     bool released = false;
 
     if ((CORE.Input.Mouse.currentButtonState[button] == 0) && (CORE.Input.Mouse.previousButtonState[button] == 1)) released = true;
@@ -3695,6 +3720,9 @@ bool IsMouseButtonReleased(int button)
 // Check if a mouse button is NOT being pressed
 bool IsMouseButtonUp(int button)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     return !IsMouseButtonDown(button);
 }
 
@@ -3742,6 +3770,9 @@ Vector2 GetMousePosition(int windowID)
 // Get mouse delta between frames
 Vector2 GetMouseDelta(int windowID)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     Vector2 delta = {0};
 
     delta.x = CORE.Input.Mouse.currentPosition[windowID].x - CORE.Input.Mouse.previousPosition[windowID].x;
@@ -3753,6 +3784,9 @@ Vector2 GetMouseDelta(int windowID)
 // Set mouse position XY
 void SetMousePosition(int windowID, int x, int y)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     CORE.Input.Mouse.currentPosition[windowID] = (Vector2){ (float)x, (float)y };
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
     // NOTE: emscripten not implemented
@@ -3764,6 +3798,9 @@ void SetMousePosition(int windowID, int x, int y)
 // NOTE: Useful when rendering to different size targets
 void SetMouseOffset(int offsetX, int offsetY)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     //[CUSTOM] Mouse position must be handled externally in platform layer
     InvalidCodePath
     CORE.Input.Mouse.offset = (Vector2){ (float)offsetX, (float)offsetY };
@@ -3773,6 +3810,9 @@ void SetMouseOffset(int offsetX, int offsetY)
 // NOTE: Useful when rendering to different size targets
 void SetMouseScale(float scaleX, float scaleY)
 {
+    //INPUT DISABLED
+    InvalidCodePath
+
     //[CUSTOM] Mouse must be handled externally in platform layer
     InvalidCodePath
     CORE.Input.Mouse.scale = (Vector2){ scaleX, scaleY };
@@ -3788,6 +3828,10 @@ float GetMouseWheelMove(void)
     return CORE.Input.Mouse.previousWheelMove/100.0f;
 #endif
 
+    //INPUT DISABLED
+    InvalidCodePath
+
+
     return CORE.Input.Mouse.previousWheelMove;
 }
 
@@ -3797,6 +3841,7 @@ void SetMouseCursor(int windowID, int cursor)
 {
     //[CUSTOM] Mouse must be handled externally in platform layer
     InvalidCodePath
+    #if 0
 #if defined(PLATFORM_DESKTOP)
     CORE.Input.Mouse.cursor = cursor;
     if (cursor == MOUSE_CURSOR_DEFAULT) glfwSetCursor(CORE.Window[windowID].handle, NULL);
@@ -3805,6 +3850,7 @@ void SetMouseCursor(int windowID, int cursor)
         // NOTE: We are relating internal GLFW enum values to our MouseCursor enum values
         glfwSetCursor(CORE.Window[windowID].handle, glfwCreateStandardCursor(0x00036000 + cursor));
     }
+#endif
 #endif
 }
 
@@ -4163,13 +4209,17 @@ static bool InitGraphicsDevice(int windowID, int width, int height)
     glfwSetWindowFocusCallback(CORE.Window[windowID].handle, WindowFocusCallback);
     glfwSetWindowPosCallback(CORE.Window[windowID].handle, WindowPositionCallback);
     glfwSetDropCallback(CORE.Window[windowID].handle, WindowDropCallback);
+
     // Set input callback events
+    //HACK: REMOVED!!!!
+#if 0
     glfwSetKeyCallback(CORE.Window[windowID].handle, KeyCallback);
     glfwSetCharCallback(CORE.Window[windowID].handle, CharCallback);
     glfwSetMouseButtonCallback(CORE.Window[windowID].handle, MouseButtonCallback);
     glfwSetCursorPosCallback(CORE.Window[windowID].handle, MouseCursorPosCallback);   // Track mouse position changes
     glfwSetScrollCallback(CORE.Window[windowID].handle, MouseScrollCallback);
     glfwSetCursorEnterCallback(CORE.Window[windowID].handle, CursorEnterCallback);
+#endif
 
     glfwMakeContextCurrent(CORE.Window[windowID].handle);
 
